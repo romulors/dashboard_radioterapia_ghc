@@ -1,0 +1,32 @@
+# Configuração do dashboard. Caminhos relativos à raiz do projeto.
+dados:
+  tarefas: "Tarefas RT Anonimizado - 2026.xlsx"
+  consultas: "Consultas AL Anonimizado - 2026.xlsx"
+  processados: "data/processed"
+
+turno:
+  # Atendimentos agendados até 18h45 são "Dia"; a partir das 19h00, "Noite".
+  inicio_noite: "19:00"
+
+acelerador:
+  abertura: "07:00"
+  fechamento: "22:30"
+  vaga_minutos: 15
+  # Faixas com vagas de 20 min, preferencialmente para inícios de tratamento.
+  faixas_especiais:
+    - {inicio: "10:00", fim: "11:00", vaga_minutos: 20}
+    - {inicio: "15:00", fim: "16:00", vaga_minutos: 20}
+
+metas:
+  ocupacao_acelerador: [0.80, 0.85]
+  ocupacao_tomografo: [0.80, 0.85]
+  # Prazo (dias úteis) por tipo de fluxo, como configurado no Aria.
+  prazo_planejamento_dias_uteis:
+    Urgência: 1
+    Prioridade: 5
+    Eletivo: 10
+
+app:
+  host: "127.0.0.1"
+  port: 8050
+  debug: false

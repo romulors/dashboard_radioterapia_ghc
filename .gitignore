@@ -1,0 +1,47 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# --- Ambientes virtuais e segredos ---
+.venv/
+venv/
+env/
+.env
+.env.*
+!.env.example
+
+# --- Jupyter ---
+.ipynb_checkpoints/
+
+# --- Dados derivados (recriados pelo ETL) ---
+data/processed/
+data/cache/
+*.parquet
+
+# --- Arquivos temporários do Office/Windows/macOS ---
+~$*
+*.tmp
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# --- IDEs ---
+.vscode/
+.idea/
+
+# --- Graphify: manter graph.json, GRAPH_REPORT.md e graph.html; ignorar cache interno ---
+graphify-out/cache/
+graphify-out/.graphify_*
+graphify-out/manifest.json
+
+# --- Claude Code (configuração local) ---
+.claude/settings.local.json

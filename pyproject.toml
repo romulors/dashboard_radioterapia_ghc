@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rt-dash"
+version = "0.1.0"
+description = "Dashboard do fluxo de planejamento e tratamento da Radioterapia (GHC / SUS)"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "pandas>=2.1",
+    "openpyxl>=3.1",
+    "pyarrow>=14",
+    "pyyaml>=6",
+    "plotly>=5.22",
+    "dash>=2.17",
+    "dash-bootstrap-components>=1.6",
+    "dash-ag-grid>=32.3",
+]
+
+[project.scripts]
+rt-dash = "rt_dash.app.main:main"
+rt-dash-etl = "rt_dash.etl:main"
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "ruff>=0.5"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+rt_dash = ["assets/*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM"]

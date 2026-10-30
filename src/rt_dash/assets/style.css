@@ -1,0 +1,81 @@
+/* Identidade GHC — as mesmas cores de rt_dash/viz/theme.py */
+:root {
+  --ghc-verde: #004231;
+  --ghc-petroleo: #006E77;
+  --ghc-agua: #7ABBB1;
+  --fundo: #F4F6F6;
+  --cartao: #FFFFFF;
+  --texto: #2B2B2B;
+  --texto-2: #6B7280;
+  --grade: #E5E7EB;
+  --atrasado: #C62828;
+}
+
+body { background: var(--fundo); color: var(--texto); font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif; }
+.pagina { max-width: 1680px; margin: 0 auto; padding: 0 16px 24px; }
+
+/* Cabeçalho no formato das apresentações de agosto/2026 */
+.ghc-header { display: flex; align-items: stretch; margin: 0 -16px; min-height: 72px; }
+.ghc-marca { background: var(--ghc-petroleo); color: #fff; display: flex; align-items: center; gap: 10px; padding: 0 24px; }
+.ghc-logo { font-weight: 800; font-style: italic; font-size: 26px; letter-spacing: 1px; border: 2px solid #fff; border-radius: 50% / 40%; padding: 0 10px; }
+.ghc-sus { font-weight: 800; font-size: 15px; }
+.ghc-grupo { font-weight: 600; font-size: 14px; }
+.ghc-titulo { background: var(--ghc-agua); flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 0 24px; }
+.ghc-titulo h1 { color: #fff; font-size: 22px; font-weight: 700; margin: 0; }
+.ghc-sub { color: var(--ghc-verde); font-size: 13px; }
+
+/* Barra de filtros */
+.barra-filtros { display: flex; flex-wrap: wrap; gap: 16px 24px; align-items: flex-end; background: var(--cartao);
+  border-bottom: 3px solid var(--ghc-agua); padding: 12px 16px; margin: 0 -16px 8px; position: sticky; top: 0; z-index: 20; }
+.filtro label, .rotulo-controle { display: block; font-size: 12px; font-weight: 600; color: var(--texto-2); text-transform: uppercase; letter-spacing: .03em; margin-bottom: 4px; }
+.rotulo-controle { display: inline-block; margin: 0 8px 0 0; }
+.filtro-periodo { flex: 1 1 420px; min-width: 300px; }
+.filtro-sitio { flex: 0 1 260px; min-width: 200px; }
+.botao-limpar { border: 1px solid var(--grade); }
+
+/* Chips (checklists e radios com aparência de botão) */
+.chip { display: inline-block; border: 1px solid var(--grade); border-radius: 999px; padding: 3px 12px; margin: 0 6px 6px 0;
+  font-size: 13px; cursor: pointer; background: #fff; color: var(--texto); user-select: none; }
+.chip:hover { border-color: var(--ghc-petroleo); }
+.chip-ativo, .btn-check:checked + .chip { background: var(--ghc-petroleo); border-color: var(--ghc-petroleo); color: #fff; }
+.form-check-inline { margin-right: 0; padding-left: 0; }
+.chips-selecao { display: flex; align-items: center; gap: 8px; min-height: 32px; margin: 4px 0; }
+
+/* Abas */
+.abas { border-bottom: 2px solid var(--grade); margin-bottom: 12px; }
+.abas .nav-link { color: var(--texto-2); font-weight: 600; border: none; border-bottom: 3px solid transparent; }
+.abas .nav-link.active { color: var(--ghc-verde); background: transparent; border-bottom-color: var(--ghc-verde); }
+
+/* Cartões e KPIs */
+.cartao { border: none; border-radius: 10px; box-shadow: 0 1px 2px rgba(0,0,0,.06); }
+.row > [class*="col"] > .cartao:only-child { height: 100%; }
+.cartao-titulo { font-size: 15px; font-weight: 700; margin: 0; color: var(--texto); }
+.cartao-sub { font-size: 12px; color: var(--texto-2); margin: 2px 0 4px; }
+.linha-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-bottom: 12px; }
+.kpi { background: var(--cartao); border-radius: 10px; padding: 12px 16px; border-left: 4px solid var(--ghc-petroleo); box-shadow: 0 1px 2px rgba(0,0,0,.06); }
+.kpi-titulo { font-size: 12px; color: var(--texto-2); text-transform: uppercase; letter-spacing: .03em; font-weight: 600; }
+.kpi-valor { font-size: 24px; font-weight: 700; color: var(--ghc-verde); line-height: 1.25; overflow-wrap: anywhere; }
+.kpi-nota { font-size: 12px; color: var(--texto-2); }
+.linha-controles { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 12px; }
+.dropdown-mes { width: 140px; }
+.nota { font-size: 12px; color: var(--texto-2); }
+.selecao-atual { font-size: 13px; font-weight: 600; color: var(--ghc-petroleo); }
+.botao-ghc { background: var(--ghc-verde); border-color: var(--ghc-verde); }
+.botao-ghc:hover { background: var(--ghc-petroleo); border-color: var(--ghc-petroleo); }
+
+/* Navegação pelas etapas do fluxo (layout C) */
+.fluxo-nav { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+.etapa { display: inline-block; padding: 6px 18px 6px 14px; margin-right: 4px; background: #fff; border: 1px solid var(--grade);
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 50%, calc(100% - 10px) 100%, 0 100%, 10px 50%); cursor: pointer; font-size: 13px; }
+.etapa-ativa, .btn-check:checked + .etapa { background: var(--ghc-petroleo); color: #fff; border-color: var(--ghc-petroleo); }
+
+/* Jornada */
+.cabecalho-paciente { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 8px; }
+.cabecalho-paciente h2 { font-size: 20px; font-weight: 700; color: var(--ghc-verde); margin: 0 8px 0 0; }
+.celula-atraso { color: var(--atrasado); font-weight: 600; }
+
+/* Modo apresentação */
+.slide { border-top: 6px solid var(--ghc-petroleo); padding: 16px 0 32px; }
+.slide-titulo { font-size: 22px; color: var(--ghc-verde); font-weight: 700; }
+
+.rodape { margin-top: 24px; font-size: 12px; color: var(--texto-2); text-align: center; }
