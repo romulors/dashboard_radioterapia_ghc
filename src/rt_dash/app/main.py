@@ -15,12 +15,13 @@ from dash import ctx as dash_ctx
 
 from rt_dash.app.components import barra_filtros, cabecalho
 from rt_dash.app.context import AppContext
-from rt_dash.app.pages import atendimento, atividades, jornada, produtividade, visao_geral
+from rt_dash.app.pages import analise_multidimensional, atendimento, atividades, jornada, produtividade, visao_geral
 from rt_dash.config import DEFAULT_SETTINGS, Settings, load_settings
 from rt_dash.data import Dataset, carregar_dataset
 from rt_dash.viz.theme import registrar_template, rotulo_mes
 
 PAGINAS = [
+    ("analise-multidimensional", "Análise Multidimensional", analise_multidimensional),
     ("produtividade", "Produtividade", produtividade),
     ("visao-geral", "Visão Geral", visao_geral),
     ("atividades", "Atividades", atividades),

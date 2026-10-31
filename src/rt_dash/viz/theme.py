@@ -39,6 +39,29 @@ NEUTRO = "#9CA3AF"
 ESCALA_SEQUENCIAL = [[0, "#FFFFFF"], [1, GHC_PETROLEO]]
 ESCALA_DIVERGENTE = [[0, NO_PRAZO], [0.5, "#FFFFFF"], [1, ATRASADO]]
 
+# Cores adicionais das paletas Adobe para visualizações multidimensionais
+CORES_ADOBE_PALETTE1 = ["#004231", "#423200", "#3C0042", "#32977E", "#C2AA61"]
+CORES_ADOBE_PALETTE2 = ["#004231", "#421C00", "#420400", "#61C2AA", "#C28961"]
+CORES_ADOBE_PALETTE3 = ["#004231", "#177S5E", "#43A88F", "#84DBC5", "#CCFFF2"]
+CORES_ADOBE_PALETTE4 = ["#004231", "#00EBB0", "#00C291", "#009973", "#007054"]
+
+# Paleta sequencial ampliada (para gradientes em heatmaps)
+CORES_SEQUENCIAL = [
+    "#FFFFFF",
+    "#F0F8F7",
+    "#E1F1F0",
+    "#D2EBE9",
+    "#C3E5E2",
+    "#B4DFDB",
+    "#84DBC5",
+    "#61C2AA",
+    "#32977E",
+    "#177S5E",
+    "#00C291",
+    "#009973",
+    "#004231",
+]
+
 FONTE = "Inter, 'Segoe UI', Roboto, Arial, sans-serif"
 
 MESES_PT = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"]
