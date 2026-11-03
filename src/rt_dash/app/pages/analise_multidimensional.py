@@ -5,6 +5,8 @@ Incluindo: Scatter + Facetas, Heatmap Temporal, Sunburst, Funnel, e Gráficos de
 
 from __future__ import annotations
 
+import traceback
+
 import pandas as pd
 import plotly.graph_objects as go
 import dash_bootstrap_components as dbc
@@ -13,6 +15,7 @@ from dash import Dash, Input, Output, html
 from rt_dash.app.components import cartao, grafico
 from rt_dash.app.context import AppContext
 from rt_dash.viz import theme as t
+from rt_dash.viz.figures import vazio
 
 
 def layout(ctx: AppContext) -> html.Div:
@@ -33,7 +36,7 @@ def layout(ctx: AppContext) -> html.Div:
                         cartao(
                             "Tempo vs. Desfecho (Scatter + Facetas)",
                             grafico("g-am-scatter-facetas"),
-                            subtitulo="X=tempo acumulado, Y=tempo até aprovação. Tamanho=atividades, cor=% no prazo.",
+                            subtitulo="X=duração do ciclo, Y=até aprovação. Tamanho=atividades, cor=fluxo, contorno vermelho=com atraso.",
                         ),
                         lg=12,
                     ),
@@ -99,160 +102,169 @@ def layout(ctx: AppContext) -> html.Div:
     )
 
 
+PALETA = t.CORES_ADOBE_PALETTE1[:1] + t.CORES_ADOBE_PALETTE4[1:] + t.CORES_ADOBE_PALETTE1[3:] + t.CORES_ADOBE_PALETTE2[3:]
+
+
+def _ciclos(ds) -> pd.DataFrame:
+    """Ciclos com o sítio do paciente (o mais frequente nos cursos de tratamento)."""
+    c = ds.ciclos.copy()
+    sitio = (
+        ds.cursos.dropna(subset=["sitio"]).groupby("paciente_id")["sitio"].agg(lambda s: s.mode().iat[0])
+        if not ds.cursos.empty
+        else pd.Series(dtype=object)
+    )
+    c["sitio"] = c["paciente_id"].map(sitio).fillna("Sem sítio")
+    c["tipo_fluxo"] = c["tipo_fluxo"].fillna("Sem tipo")
+    c["atrasado"] = c["n_atrasadas"] > 0
+    c["status"] = c["atrasado"].map({True: "Atrasado", False: "No prazo"})
+    return c
+
+
+def _layout(fig: go.Figure, altura: int) -> go.Figure:
+    fig.update_layout(height=altura, margin=dict(l=50, r=20, t=20, b=50), hovermode="closest")
+    return fig
+
+
 def _scatter_facetas(ds) -> go.Figure:
-    """Scatter plot: Lead time vs. tempo até aprovação, colorido por % no prazo."""
-    if ds.ciclos.empty:
-        return go.Figure().add_annotation(text="Sem dados")
-    
-    ciclos = ds.ciclos.copy()
-    
+    c = _ciclos(ds).dropna(subset=["lead_time_dias", "ate_aprovacao_dias"])
+    if c.empty:
+        return vazio()
     fig = go.Figure()
-    for fluxo in sorted(ciclos["tipo_fluxo"].unique()):
-        subset = ciclos[ciclos["tipo_fluxo"] == fluxo]
-        cor = t.CORES_FLUXO.get(fluxo, t.NEUTRO)
-        
+    for fluxo, g in c.groupby("tipo_fluxo"):
         fig.add_trace(
             go.Scatter(
-                x=subset["lead_time_dias"],
-                y=subset["ate_aprovacao_dias"],
+                x=g["lead_time_dias"],
+                y=g["ate_aprovacao_dias"],
                 mode="markers",
-                marker=dict(
-                    size=subset["n_atividades"],
-                    color=subset["pct_no_prazo"].fillna(0),
-                    colorscale="RdYlGn",
-                    cmin=0,
-                    cmax=1,
-                    showscale=(fluxo == sorted(ciclos["tipo_fluxo"].unique())[0]),
-                    colorbar=dict(title="% No Prazo"),
-                    line=dict(width=1, color=cor),
-                ),
-                text=subset["paciente_id"],
-                hovertemplate="<b>%{text}</b><br>Lead time: %{x:.1f}d<br>Até Aprovação: %{y:.1f}d<extra></extra>",
                 name=fluxo,
+                marker=dict(
+                    size=(g["n_atividades"].clip(upper=60) / 3 + 5),
+                    color=t.CORES_FLUXO.get(fluxo, t.NEUTRO),
+                    opacity=0.65,
+                    line=dict(width=1, color=[t.ATRASADO if a else t.NO_PRAZO for a in g["atrasado"]]),
+                ),
+                customdata=g[["paciente_id", "sitio", "n_atividades"]].to_numpy(),
+                hovertemplate=(
+                    "<b>%{customdata[0]}</b> · %{customdata[1]}<br>Ciclo: %{x:.1f} d<br>"
+                    "Até aprovação: %{y:.1f} d<br>Atividades: %{customdata[2]}<extra>" + fluxo + "</extra>"
+                ),
             )
         )
-    
-    fig.update_layout(height=500, hovermode="closest", template="plotly_white")
-    fig.update_xaxes(title_text="Lead Time (dias)")
-    fig.update_yaxes(title_text="Até Aprovação (dias)")
-    return fig
+    fig.update_xaxes(title_text="Duração do ciclo (dias)")
+    fig.update_yaxes(title_text="Até aprovação (dias)")
+    return _layout(fig, 460)
 
 
 def _heatmap_temporal(ds) -> go.Figure:
-    """Heatmap: Ciclos por mês."""
-    if ds.ciclos.empty:
-        return go.Figure().add_annotation(text="Sem dados")
-    
-    ciclos = ds.ciclos.copy()
-    ciclos["mes_str"] = ciclos["mes"].dt.strftime("%b/%y")
-    contagem = ciclos.groupby(["mes_str", "tipo_fluxo"]).size().unstack(fill_value=0)
-    
+    c = _ciclos(ds).dropna(subset=["mes"])
+    if c.empty:
+        return vazio()
+    tab = c.groupby(["tipo_fluxo", "mes"]).size().unstack(fill_value=0).sort_index(axis=1)
     fig = go.Figure(
-        data=go.Heatmap(
-            x=contagem.columns,
-            y=contagem.index,
-            z=contagem.values,
-            colorscale="Viridis",
+        go.Heatmap(
+            z=tab.values,
+            x=[t.rotulo_mes(m) for m in tab.columns],
+            y=list(tab.index),
+            colorscale=t.ESCALA_SEQUENCIAL,
+            colorbar=dict(title="Ciclos"),
+            hovertemplate="%{y} · %{x}<br>%{z} ciclos<extra></extra>",
         )
     )
-    fig.update_layout(height=400, title="Ciclos por Mês e Fluxo")
-    return fig
+    return _layout(fig, 360)
 
 
 def _heatmap_atrasos(ds) -> go.Figure:
-    """Heatmap: % de ciclos atrasados por sítio e fluxo."""
-    if ds.ciclos.empty:
-        return go.Figure().add_annotation(text="Sem dados")
-    
-    ciclos = ds.ciclos.copy()
-    ciclos["atrasado"] = ciclos["n_atrasadas"] > 0
-    atrasos = ciclos.groupby(["sitio", "tipo_fluxo"])["atrasado"].apply(lambda x: (x.sum() / len(x) * 100) if len(x) > 0 else 0)
-    pivot = atrasos.unstack(fill_value=0)
-    
+    c = _ciclos(ds)
+    if c.empty:
+        return vazio()
+    tab = (c.groupby(["sitio", "tipo_fluxo"])["atrasado"].mean() * 100).unstack()
     fig = go.Figure(
-        data=go.Heatmap(
-            x=pivot.columns,
-            y=pivot.index,
-            z=pivot.values,
-            colorscale="RdYlGn_r",
-            cmin=0,
-            cmax=100,
+        go.Heatmap(
+            z=tab.values,
+            x=list(tab.columns),
+            y=list(tab.index),
+            zmin=0,
+            zmax=100,
+            colorscale=[[0, t.NO_PRAZO], [0.5, "#FFFFFF"], [1, t.ATRASADO]],
+            colorbar=dict(title="% atrasados"),
+            hovertemplate="%{y} · %{x}<br>%{z:.0f}% dos ciclos com atraso<extra></extra>",
         )
     )
-    fig.update_layout(height=400, title="% Ciclos Atrasados")
-    return fig
+    return _layout(fig, 360)
 
 
 def _sunburst(ds) -> go.Figure:
-    """Sunburst: Sítio → Fluxo → Status."""
-    if ds.ciclos.empty:
-        return go.Figure().add_annotation(text="Sem dados")
-    
-    ciclos = ds.ciclos.copy()
-    ciclos["status"] = ciclos["pct_no_prazo"].fillna(0).apply(lambda x: "No Prazo" if x >= 0.5 else "Atrasado")
-    
-    contagem = ciclos.groupby(["sitio", "tipo_fluxo", "status"]).size().reset_index(name="count")
-    
-    fig = go.Figure(
-        go.Sunburst(
-            labels=["Total"] + contagem["sitio"].unique().tolist() + contagem["tipo_fluxo"].unique().tolist() + contagem["status"].unique().tolist(),
-            parents=[""] + ["Total"] * len(contagem["sitio"].unique()) + contagem["sitio"].tolist() + contagem["sitio"].tolist(),
-            values=[contagem["count"].sum()] + [contagem[contagem["sitio"] == s]["count"].sum() for s in contagem["sitio"].unique()] + contagem["count"].tolist(),
-        )
+    c = _ciclos(ds)
+    if c.empty:
+        return vazio()
+    n = c.groupby(["sitio", "tipo_fluxo", "status"]).size().reset_index(name="n")
+    ids, labels, parents, values = [], [], [], []
+    for s, gs in n.groupby("sitio"):
+        ids.append(s); labels.append(s); parents.append(""); values.append(int(gs["n"].sum()))
+        for f, gf in gs.groupby("tipo_fluxo"):
+            ids.append(f"{s}|{f}"); labels.append(f); parents.append(s); values.append(int(gf["n"].sum()))
+            for _, r in gf.iterrows():
+                ids.append(f"{s}|{f}|{r['status']}")
+                labels.append(r["status"]); parents.append(f"{s}|{f}"); values.append(int(r["n"]))
+    fig = go.Figure(go.Sunburst(ids=ids, labels=labels, parents=parents, values=values, branchvalues="total"))
+    fig.update_traces(
+        marker=dict(colors=[t.ATRASADO if l == "Atrasado" else t.NO_PRAZO if l == "No prazo" else PALETA[hash(i.split("|")[0]) % len(PALETA)] for i, l in zip(ids, labels)])
     )
-    fig.update_layout(height=500)
-    return fig
+    return _layout(fig, 460)
 
 
 def _funnel(ds) -> go.Figure:
-    """Funnel: Estágios de planejamento."""
-    if ds.ciclos.empty:
-        return go.Figure().add_annotation(text="Sem dados")
-    
-    ciclos = ds.ciclos.copy()
-    total = len(ciclos)
-    com_importacao = (ciclos["tem_importacao"]).sum()
-    com_aprovacao = (ciclos["aprovacao"].notna()).sum()
-    
+    c = _ciclos(ds)
+    if c.empty:
+        return vazio()
+    etapas = [
+        ("Ciclos iniciados", len(c)),
+        ("Com importação de TC", int(c["tem_importacao"].sum())),
+        ("Plano aprovado", int(c["aprovacao"].notna().sum())),
+        ("Tratamento iniciado", int(c["inicio_tratamento"].notna().sum())),
+    ]
     fig = go.Figure(
         go.Funnel(
-            x=[total, com_importacao, com_aprovacao],
-            y=["Todos os Ciclos", "Com Importação", "Com Aprovação"],
+            y=[e[0] for e in etapas],
+            x=[e[1] for e in etapas],
+            textinfo="value+percent initial",
+            marker=dict(color=PALETA[: len(etapas)]),
         )
     )
-    fig.update_layout(height=400)
-    return fig
+    return _layout(fig, 360)
 
 
 def _area_indicadores(ds) -> go.Figure:
-    """Área: Evolução de % no prazo por sítio."""
-    if ds.ciclos.empty:
-        return go.Figure().add_annotation(text="Sem dados")
-    
-    ciclos = ds.ciclos.copy()
-    evolucao = ciclos.groupby(["mes", "sitio"])["pct_no_prazo"].mean().unstack(fill_value=0) * 100
-    
+    c = _ciclos(ds).dropna(subset=["mes"])
+    if c.empty:
+        return vazio()
+    top = c["sitio"].value_counts().head(6).index
+    ev = c[c["sitio"].isin(top)].groupby(["mes", "sitio"]).size().unstack(fill_value=0).sort_index()
     fig = go.Figure()
-    for sitio in evolucao.columns:
+    for i, s in enumerate(ev.columns):
         fig.add_trace(
             go.Scatter(
-                x=evolucao.index,
-                y=evolucao[sitio],
-                name=sitio,
+                x=[t.rotulo_mes(m) for m in ev.index],
+                y=ev[s],
+                name=s,
                 mode="lines",
-                stackgroup="one",
-                fillcolor=t.CORES_FLUXO.get(sitio, t.NEUTRO),
+                stackgroup="um",
+                line=dict(width=1, color=PALETA[i % len(PALETA)]),
             )
         )
-    
-    fig.update_layout(height=400, hovermode="x unified", title="% Ciclos No Prazo")
-    fig.update_yaxes(title_text="% No Prazo")
-    return fig
+    fig.update_yaxes(title_text="Ciclos de planejamento")
+    return _layout(fig, 360)
+
+
+def _seguro(fn, ds) -> go.Figure:
+    try:
+        return fn(ds)
+    except Exception as exc:
+        traceback.print_exc()
+        return vazio(f"Erro ao montar o gráfico: {exc}")
 
 
 def registrar(app: Dash, ctx: AppContext) -> None:
-    """Registra callbacks para atualizar todos os gráficos."""
-    
     @app.callback(
         Output("g-am-scatter-facetas", "figure"),
         Output("g-am-heatmap-temporal", "figure"),
@@ -264,12 +276,7 @@ def registrar(app: Dash, ctx: AppContext) -> None:
     )
     def atualizar_graficos(estado):
         ds = ctx.dados(estado)
-        
-        return (
-            _scatter_facetas(ds),
-            _heatmap_temporal(ds),
-            _heatmap_atrasos(ds),
-            _sunburst(ds),
-            _funnel(ds),
-            _area_indicadores(ds),
+        return tuple(
+            _seguro(f, ds)
+            for f in (_scatter_facetas, _heatmap_temporal, _heatmap_atrasos, _sunburst, _funnel, _area_indicadores)
         )

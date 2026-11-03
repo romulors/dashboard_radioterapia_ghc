@@ -42,7 +42,7 @@ ESCALA_DIVERGENTE = [[0, NO_PRAZO], [0.5, "#FFFFFF"], [1, ATRASADO]]
 # Cores adicionais das paletas Adobe para visualizações multidimensionais
 CORES_ADOBE_PALETTE1 = ["#004231", "#423200", "#3C0042", "#32977E", "#C2AA61"]
 CORES_ADOBE_PALETTE2 = ["#004231", "#421C00", "#420400", "#61C2AA", "#C28961"]
-CORES_ADOBE_PALETTE3 = ["#004231", "#177S5E", "#43A88F", "#84DBC5", "#CCFFF2"]
+CORES_ADOBE_PALETTE3 = ["#004231", "#17755E", "#43A88F", "#84DBC5", "#CCFFF2"]
 CORES_ADOBE_PALETTE4 = ["#004231", "#00EBB0", "#00C291", "#009973", "#007054"]
 
 # Paleta sequencial ampliada (para gradientes em heatmaps)
@@ -56,7 +56,7 @@ CORES_SEQUENCIAL = [
     "#84DBC5",
     "#61C2AA",
     "#32977E",
-    "#177S5E",
+    "#17755E",
     "#00C291",
     "#009973",
     "#004231",
