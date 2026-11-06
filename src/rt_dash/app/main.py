@@ -14,6 +14,7 @@ import dash_bootstrap_components as dbc
 from dash import ALL, ClientsideFunction, Dash, Input, Output, State, dcc, html, no_update
 from dash import ctx as dash_ctx
 
+from rt_dash.app import ajuda
 from rt_dash.app.abas import ABAS
 from rt_dash.app.components import barra_filtros, cabecalho
 from rt_dash.app.context import AppContext
@@ -75,6 +76,7 @@ GRAFICOS_MES = ["g-vg-planejamentos", "g-vg-inicios", "g-vg-sessoes_turno", "g-v
 def criar_app(settings: Settings, ds: Dataset) -> Dash:
     registrar_template()
     contexto = AppContext(settings, ds)
+    ajuda.configurar(settings)
     app = Dash(
         __name__,
         title="Indicadores Radioterapia · GHC",

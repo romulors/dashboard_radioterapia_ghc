@@ -85,10 +85,14 @@ com meta/situação/tendência, bullet, win/loss, KPIs e séries mensais, modo a
 valor por etapa, carta de controle, Pareto, dot strip, atividades, lollipop de atraso, dispersão), **Jornada do Paciente**
 e **Sobre** (autoria, fonte, tecnologia, referências, definições e metas, qualidade dos dados, acessibilidade).
 Gráficos novos: cálculos em `metrics/fluxo.py`, figuras em `viz/novos.py`, callbacks em `app/pages/novos.py`.
-Cada gráfico tem um ícone “?” (canto superior direito do cartão) que explica o cálculo: textos em `app/ajuda.py`
-(`CALCULO`); séries mensais `g-vg-*`/`g-ap-*` usam a `descricao` do registro. Gráfico novo = acrescentar o texto lá.
-Ao lado do “?” fica o botão de expandir: o cartão vira uma sobreposição na largura da tela e a altura do gráfico
-acompanha a proporção (`assets/a11y.js`, Esc ou o mesmo botão recolhe; foco preso no cartão enquanto expandido).
+Cabeçalho de cada gráfico (ordem pedida pelo autor): ⓘ · título e subtítulo · índice 2/4 · ⇄ · expandir.
+Ícones do Material Symbols (info_i, sync_alt, open_in_full, close_fullscreen) em `assets/icones/` como máscara CSS.
+ⓘ mostra cálculo (`app/ajuda.py`, `CALCULO`; séries `g-vg-*`/`g-ap-*` usam a `descricao` do registro), meta e
+tolerância (`METAS_GRAFICO`; tolerância = `TOLERANCIA_*` de `metrics/fluxo.py`, a mesma de `status_meta`).
+⇄ troca a renderização no navegador (`assets/a11y.js`, `classificar`): linhas/barras/área/pontos, barras/pontos/
+colunas, histograma/caixa/violino/acumulada, mapa de calor/bolhas/linhas, dispersão/densidade/contornos. Figura nova
+do servidor volta à visualização 1. Sem alternativa: `SEM_ALTERNATIVAS` em `app/components.py`.
+Expandir: o cartão vira sobreposição na largura da tela (Esc, fundo ou o botão recolhem).
 Metas ainda não definidas ficam `null` em `config/settings.yaml` (`pct_no_prazo`, `lead_time_mediana_dias`).
 Proposta que originou esta versão: https://claude.ai/artifact/TySDdDuP9ec9phWBxk7VZs
 

@@ -179,6 +179,11 @@ def composicao_fluxo(ciclos: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame({"tipo_fluxo": n.index, "n": n.to_numpy(), "pct": (n / n.sum()).to_numpy()})
 
 
+# Tolerância (desvio aceito antes de "fora da meta"): dentro dela a situação é "atenção".
+TOLERANCIA_LIMITE = 0.10  # metas de limite único: 10% abaixo (quanto maior, melhor) ou acima (quanto menor, melhor)
+TOLERANCIA_FAIXA = 0.05  # metas em faixa: 5% abaixo do mínimo ou acima do máximo
+
+
 def status_meta(valor: float | None, meta: tuple[float, float] | float | None, polaridade: str) -> tuple[str, str]:
     """Status de um valor frente à meta: (código, texto). Código: ok | atencao | fora | sem_meta.
 
@@ -193,14 +198,16 @@ def status_meta(valor: float | None, meta: tuple[float, float] | float | None, p
     if polaridade == "menor":
         if valor <= hi:
             return "ok", "Dentro da meta"
-        return ("atencao", "Pouco acima da meta") if valor <= hi * 1.1 else ("fora", "Acima da meta")
+        perto = valor <= hi * (1 + TOLERANCIA_LIMITE)
+        return ("atencao", "Pouco acima da meta") if perto else ("fora", "Acima da meta")
     if polaridade == "maior":
         if valor >= lo:
             return "ok", "Dentro da meta"
-        return ("atencao", "Pouco abaixo da meta") if valor >= lo * 0.9 else ("fora", "Abaixo da meta")
+        perto = valor >= lo * (1 - TOLERANCIA_LIMITE)
+        return ("atencao", "Pouco abaixo da meta") if perto else ("fora", "Abaixo da meta")
     if lo <= valor <= hi:
         return "ok", "Dentro da meta"
-    perto = lo * 0.95 <= valor <= hi * 1.05
+    perto = lo * (1 - TOLERANCIA_FAIXA) <= valor <= hi * (1 + TOLERANCIA_FAIXA)
     texto = "abaixo" if valor < lo else "acima"
     return ("atencao", f"Pouco {texto} da meta") if perto else ("fora", f"{texto.capitalize()} da meta")
 

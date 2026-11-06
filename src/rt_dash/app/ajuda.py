@@ -6,6 +6,7 @@ descrição do próprio indicador no registro; os demais têm o texto aqui.
 
 from __future__ import annotations
 
+from rt_dash.metrics.fluxo import TOLERANCIA_FAIXA, TOLERANCIA_LIMITE
 from rt_dash.metrics.registry import REGISTRO
 
 _DURACAO_CICLO = "Duração do ciclo = dias entre o início do ciclo e o término da última tarefa registrada nele."
@@ -91,3 +92,68 @@ def calculo(id_: str) -> str:
                 texto = ". ".join(p.rstrip(".") for p in partes if p)
                 return f"{texto}. Unidade: {ind.unidade}." if ind.unidade else f"{texto}."
     return ""
+
+
+# ---------------------------------------------------------------- metas e tolerâncias
+_settings = None
+
+# Gráfico → (campo da meta em Settings, polaridade, formato). A meta vem de config/settings.yaml.
+_OCUPACAO = ("meta_ocupacao_acelerador", "faixa", "pct")
+_PRAZO = ("meta_pct_no_prazo", "maior", "pct")
+_LEAD = ("meta_lead_time_dias", "menor", "dias")
+METAS_GRAFICO = {
+    "g-al-ocupacao": _OCUPACAO,
+    "g-sc-ocupacao": _OCUPACAO,
+    "g-vg-ocupacao_acelerador": _OCUPACAO,
+    "g-ap-ocupacao_acelerador": _OCUPACAO,
+    "g-sc-prazo": _PRAZO,
+    "g-vg-no_prazo": _PRAZO,
+    "g-ap-no_prazo": _PRAZO,
+    "g-nv-controle": _LEAD,
+    "g-nv-ridgeline": _LEAD,
+    "g-nv-dotstrip": _LEAD,
+}
+
+
+def configurar(settings) -> None:
+    """Guarda as configurações para os textos de meta (chamado ao montar o app)."""
+    global _settings
+    _settings = settings
+
+
+def _fmt(v: float, formato: str) -> str:
+    n = v * 100 if formato == "pct" else v
+    texto = f"{n:.2f}".rstrip("0").rstrip(".").replace(".", ",")
+    return f"{texto}%" if formato == "pct" else f"{texto} dias"
+
+
+def meta_e_tolerancia(id_: str) -> tuple[str, str] | None:
+    """(meta, tolerância) do gráfico em texto; None quando o indicador não tem meta."""
+    if id_ == "g-sc-winloss":
+        return ("a de cada indicador (ocupação 80–85%; prazo e duração do ciclo quando definidos).", "")
+    if id_ not in METAS_GRAFICO:
+        return None
+    campo, polaridade, formato = METAS_GRAFICO[id_]
+    meta = getattr(_settings, campo, None) if _settings is not None else None
+    if meta is None:
+        return ("ainda não definida pela gestão (config/settings.yaml).", "")
+    lo, hi = meta if isinstance(meta, tuple | list) else (meta, meta)
+    if polaridade == "faixa":
+        alvo = f"entre {_fmt(lo, formato)} e {_fmt(hi, formato)}"
+        tol = (
+            f"até {TOLERANCIA_FAIXA:.0%} além da faixa ({_fmt(lo * (1 - TOLERANCIA_FAIXA), formato)} a "
+            f"{_fmt(hi * (1 + TOLERANCIA_FAIXA), formato)}) conta como “atenção”; além disso, “fora da meta”."
+        )
+    elif polaridade == "maior":
+        alvo = f"{_fmt(lo, formato)} ou mais"
+        tol = (
+            f"até {TOLERANCIA_LIMITE:.0%} abaixo (a partir de {_fmt(lo * (1 - TOLERANCIA_LIMITE), formato)}) conta "
+            "como “atenção”; abaixo disso, “fora da meta”."
+        )
+    else:
+        alvo = f"{_fmt(hi, formato)} ou menos (mediana)"
+        tol = (
+            f"até {TOLERANCIA_LIMITE:.0%} acima (até {_fmt(hi * (1 + TOLERANCIA_LIMITE), formato)}) conta como "
+            "“atenção”; acima disso, “fora da meta”."
+        )
+    return (alvo + ".", tol)

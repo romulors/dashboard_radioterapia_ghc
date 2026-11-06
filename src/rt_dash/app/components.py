@@ -7,7 +7,7 @@ import inspect
 import dash_bootstrap_components as dbc
 from dash import dcc, html
 
-from rt_dash.app.ajuda import calculo
+from rt_dash.app.ajuda import calculo, meta_e_tolerancia
 from rt_dash.domain.activities import TIPOS_FLUXO
 from rt_dash.viz import theme as t
 
@@ -137,11 +137,32 @@ def barra_filtros(meses, sitios) -> html.Div:
     )
 
 
+def _controles_do_grafico(conteudo) -> tuple[html.Div | None, html.Div | None]:
+    """Retira os controles (info e ações) do primeiro gráfico do cartão para colocá-los no cabeçalho."""
+    for item in conteudo:
+        filhos = getattr(item, "children", None)
+        if (
+            "grafico-a11y" in (getattr(item, "className", "") or "")
+            and isinstance(filhos, list)
+            and len(filhos) > 1
+            and getattr(filhos[0], "className", "") == "grafico-cab-info"
+        ):
+            info, acoes = filhos[0], filhos[1]
+            del filhos[:2]
+            return info, acoes
+    return None, None
+
+
 def cartao(titulo: str, *conteudo, subtitulo: str | None = None, classe: str = "") -> dbc.Card:
-    cab = [html.H3(titulo, className="cartao-titulo")]
+    """Cartão com cabeçalho na ordem: ⓘ · título e subtítulo · 2/4 · alternar · expandir."""
+    texto = [html.H3(titulo, className="cartao-titulo")]
     if subtitulo:
-        cab.append(html.Div(subtitulo, className="cartao-sub"))
-    return dbc.Card(dbc.CardBody([*cab, *conteudo]), className=f"cartao {classe}")
+        texto.append(html.Div(subtitulo, className="cartao-sub"))
+    info, acoes = _controles_do_grafico(conteudo)
+    if info is None:
+        return dbc.Card(dbc.CardBody([*texto, *conteudo]), className=f"cartao {classe}")
+    cab = html.Div([info, html.Div(texto, className="cartao-cab-texto"), acoes], className="cartao-cab")
+    return dbc.Card(dbc.CardBody([cab, *conteudo]), className=f"cartao {classe}")
 
 
 def kpi(id_: str, titulo: str) -> html.Div:
@@ -156,59 +177,120 @@ def kpi(id_: str, titulo: str) -> html.Div:
     )
 
 
-def grafico(id_: str, altura: int | None = None, descricao: str = "") -> html.Figure:
+# Gráficos cuja forma não admite outra renderização dos mesmos dados (mostram 1/1).
+SEM_ALTERNATIVAS = {"g-nv-waffle", "g-sc-winloss", "g-jo-gantt", "g-jo-cascata", "g-sc-ocupacao", "g-sc-prazo"}
+
+
+def _icone(nome: str) -> html.Span:
+    """Ícone do Material Symbols (Google, Apache 2.0), servido de assets/icones como máscara CSS."""
+    return html.Span(className=f"icone icone-{nome}", **{"aria-hidden": "true"})
+
+
+def _dica(alvo: str, conteudo, posicao: str = "bottom", classe: str = "") -> dbc.Tooltip:
+    return dbc.Tooltip(
+        conteudo, target=alvo, placement=posicao, trigger="hover focus", className=f"ajuda-tooltip {classe}".strip()
+    )
+
+
+def _conteudo_info(id_: str) -> list:
+    partes = []
+    texto = calculo(id_)
+    if texto:
+        partes.append(html.P([html.Strong("Como é calculado: "), texto]))
+    meta = meta_e_tolerancia(id_)
+    if meta:
+        alvo, tolerancia = meta
+        partes.append(html.P([html.Strong("Meta: "), alvo]))
+        if tolerancia:
+            partes.append(html.P([html.Strong("Tolerância: "), tolerancia]))
+    return partes or [html.P("Sem descrição de cálculo para este gráfico.")]
+
+
+def grafico(id_: str, altura: int | None = None, descricao: str = "", alternativas: bool = True) -> html.Figure:
     """Gráfico acessível (WCAG 1.1.1 e 1.3.1): o resumo em texto e a tabela de dados são gerados dos próprios
-    dados a cada atualização por `assets/a11y.js`; `descricao` é o texto inicial, antes do primeiro desenho."""
+    dados a cada atualização por `assets/a11y.js`; `descricao` é o texto inicial, antes do primeiro desenho.
+
+    Controles (ordem pedida): ícone de informação (cálculo, meta e tolerância) à esquerda do título e, à direita,
+    o índice da visualização (ex.: 2/4), o botão que alterna a visualização e o de expandir. Dentro de `cartao`,
+    eles vão para o cabeçalho do cartão; fora dele, ficam no topo da própria figura.
+    """
     estilo = {"height": f"{altura}px"} if altura else None
-    texto_calculo = calculo(id_)
-    ajuda = (
+    alternativas = alternativas and id_ not in SEM_ALTERNATIVAS
+    info = html.Div(
         [
             html.Button(
-                "?",
-                id=f"{id_}-ajuda",
+                _icone("info"),
+                id=f"{id_}-info",
                 type="button",
-                className="ajuda-calculo",
-                **{"aria-label": "Como este indicador é calculado", "aria-describedby": f"{id_}-ajuda-texto"},
+                className="grafico-btn grafico-info",
+                **{"aria-label": "Como é calculado, meta e tolerância", "aria-describedby": f"{id_}-info-texto"},
             ),
             dbc.Tooltip(
-                [html.Strong("Como é calculado: "), texto_calculo],
-                id=f"{id_}-ajuda-texto",
-                target=f"{id_}-ajuda",
-                placement="left",
+                _conteudo_info(id_),
+                id=f"{id_}-info-texto",
+                target=f"{id_}-info",
+                placement="bottom-start",
                 trigger="hover focus",
-                className="ajuda-tooltip",
+                className="ajuda-tooltip tooltip-info",
             ),
-        ]
-        if texto_calculo
-        else []
+        ],
+        className="grafico-cab-info",
     )
-    expandir = [
-        html.Button(
-            html.Span(className="icone-expandir", **{"aria-hidden": "true"}),
-            id=f"{id_}-expandir",
-            type="button",
-            className="expandir-grafico",
-            **{"aria-label": "Expandir gráfico para a largura total da tela", "aria-expanded": "false"},
-        ),
-        dbc.Tooltip(
-            [
-                html.Span(
-                    [html.Strong("Expandir: "), "mostra só este gráfico, na largura total da tela."],
-                    className="dica-expandir",
-                ),
-                html.Span([html.Strong("Recolher: "), "volta ao painel (ou tecle Esc)."], className="dica-recolher"),
-            ],
-            target=f"{id_}-expandir",
-            placement="left",
-            trigger="hover focus",
-            className="ajuda-tooltip tooltip-expandir",
-        ),
-    ]
+    acoes = html.Div(
+        [
+            html.Span(
+                "1/1",
+                id=f"{id_}-variante",
+                className="grafico-variante",
+                title="Visualização 1 de 1",
+                **{"aria-live": "polite", "aria-label": "Visualização 1 de 1"},
+            ),
+            html.Button(
+                _icone("alternar"),
+                id=f"{id_}-alternar",
+                type="button",
+                className="grafico-btn grafico-alternar",
+                disabled=not alternativas,
+                **{"data-grafico": id_, "aria-label": "Alternar visualização: mesmos dados em outro tipo de gráfico"},
+            ),
+            _dica(
+                f"{id_}-alternar",
+                [html.Strong("Alternar visualização: "), "mostra os mesmos dados em outro tipo de gráfico."],
+            ),
+            html.Button(
+                _icone("expandir"),
+                id=f"{id_}-expandir",
+                type="button",
+                className="grafico-btn grafico-expandir",
+                **{
+                    "data-grafico": id_,
+                    "aria-label": "Expandir gráfico para a largura total da tela",
+                    "aria-expanded": "false",
+                },
+            ),
+            _dica(
+                f"{id_}-expandir",
+                [
+                    html.Span(
+                        [html.Strong("Expandir: "), "mostra só este gráfico, na largura total da tela."],
+                        className="dica-expandir",
+                    ),
+                    html.Span(
+                        [html.Strong("Recolher: "), "volta ao painel (ou tecle Esc)."], className="dica-recolher"
+                    ),
+                ],
+                posicao="bottom-end",
+                classe="tooltip-expandir",
+            ),
+        ],
+        className="grafico-cab-acoes",
+    )
     return html.Figure(
         className="grafico-a11y",
+        **{"data-alternativas": "1" if alternativas else "0"},
         children=[
-            *expandir,
-            *ajuda,
+            info,
+            acoes,
             dcc.Loading(
                 dcc.Graph(
                     id=id_,
