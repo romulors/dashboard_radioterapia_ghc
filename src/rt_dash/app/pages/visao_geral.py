@@ -10,7 +10,6 @@ from rt_dash.metrics import REGISTRO
 from rt_dash.metrics.fluxo import status_meta
 from rt_dash.metrics.monthly import ocupacao_acelerador, pacientes_por_sitio
 from rt_dash.viz import figures as fig
-from rt_dash.viz.theme import rotulo_mes
 
 # Indicadores do formato resumido de agosto/2026 (modo apresentação)
 APRESENTACAO = ["inicios", "planejamentos_fluxo_pct", "planejamentos_fluxo", "sessoes_turno"]
@@ -77,8 +76,7 @@ def registrar(app: Dash, ctx: AppContext) -> None:
     manchetes = ["vg-h-inicios", "vg-h-ciclo", "vg-h-prazo", "vg-h-ocupacao"]
 
     @app.callback(
-        [Output(f"{i}-{campo}", "children") for i in manchetes for campo in ("valor", "status", "nota")]
-        + [Output("vg-frase", "children")],
+        [Output(f"{i}-{campo}", "children") for i in manchetes for campo in ("valor", "status", "nota")],
         Input("store-filtros", "data"),
     )
     def manchete(estado):
@@ -107,15 +105,7 @@ def registrar(app: Dash, ctx: AppContext) -> None:
             status_badge(*s_ocup),
             f"média mensal · {meta_txt}",
         ]
-        estado = estado or {}
-        ini, fim = estado.get("periodo") or [0, len(ctx.meses) - 1]
-        periodo = f"{rotulo_mes(ctx.meses[ini])} a {rotulo_mes(ctx.meses[fim])}"
-        frase = (
-            f"De {periodo}, {fmt_num(inicios)} pacientes iniciaram tratamento. A mediana do ciclo de planejamento foi "
-            f"de {fmt_num(ciclo, 1)} dias, {fmt_pct(prazo)} das tarefas terminaram no prazo e o acelerador ficou com "
-            f"{fmt_pct(ocup)} de ocupação média ({s_ocup[1].lower()})."
-        )
-        return (*saida, frase)
+        return saida
 
     @app.callback(
         [Output("vg-modal", "is_open")]

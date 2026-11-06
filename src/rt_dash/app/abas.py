@@ -111,18 +111,24 @@ def visao_geral_aba(ctx: AppContext) -> html.Div:
     return html.Div(
         className="visao-geral",
         children=[
-            html.Section(
-                className="vg-proposito",
-                children=[
-                    html.H2("Para que serve este painel", className="secao-titulo"),
-                    html.P(
-                        "Acompanha o fluxo do paciente da tomografia de planejamento ao fim do tratamento no Serviço "
-                        "de Radioterapia do Grupo Hospitalar Conceição (100% SUS). O objetivo é reduzir o tempo até o "
-                        "início do tratamento e usar bem o acelerador linear. A informação central é o tempo entre as "
-                        "atividades de cada paciente, em cada ciclo de planejamento."
-                    ),
-                    html.P(id="vg-frase", className="vg-frase", role="status", **{"aria-live": "polite"}),
-                ],
+            _secao(
+                "Mapa das abas",
+                "Cada aba responde a uma pergunta e serve a um público.",
+                html.Div(
+                    [
+                        html.Div(
+                            [
+                                html.H3(rotulo, className="cartao-titulo"),
+                                html.P(PERGUNTAS[aba][0]),
+                                html.P(f"Para: {PERGUNTAS[aba][1]}", className="nota"),
+                                _ir(aba, f"Abrir {rotulo} →", f"mapa-{aba}"),
+                            ],
+                            className="mapa-aba",
+                        )
+                        for aba, rotulo in mapa
+                    ],
+                    className="grade-mapa",
+                ),
             ),
             html.Section(
                 [
@@ -166,25 +172,6 @@ def visao_geral_aba(ctx: AppContext) -> html.Div:
                     ),
                 ],
                 className="g-3",
-            ),
-            _secao(
-                "Mapa das abas",
-                "Cada aba responde a uma pergunta e serve a um público.",
-                html.Div(
-                    [
-                        html.Div(
-                            [
-                                html.H3(rotulo, className="cartao-titulo"),
-                                html.P(PERGUNTAS[aba][0]),
-                                html.P(f"Para: {PERGUNTAS[aba][1]}", className="nota"),
-                                _ir(aba, f"Abrir {rotulo} →", f"mapa-{aba}"),
-                            ],
-                            className="mapa-aba",
-                        )
-                        for aba, rotulo in mapa
-                    ],
-                    className="grade-mapa",
-                ),
             ),
         ],
     )

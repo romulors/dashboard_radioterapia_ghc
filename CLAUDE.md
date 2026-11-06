@@ -78,8 +78,8 @@ Regras:
 ## Abas implementadas
 
 Ordem e conteúdo (composição em `app/abas.py`; cada aba tem uma pergunta de negócio em `PERGUNTAS`):
-**Visão Geral** (contexto e negócio, sem gráficos: propósito, frase-resumo, 4 manchetes com status, fluxo, perguntas,
-mapa das abas), **KPIs** (scorecard do mês
+**Visão Geral** (contexto e negócio, sem gráficos: mapa das abas primeiro, 4 manchetes com status, fluxo, perguntas
+), **KPIs** (scorecard do mês
 com meta/situação/tendência, bullet, win/loss, KPIs e séries mensais, modo apresentação), **Eficácia vs Eficiência**,
 **Resultado vs Tendência** (tendência = ciclos abertos, entradas × saídas, idade dos abertos), **Processos** (fluxo de
 valor por etapa, carta de controle, Pareto, dot strip, atividades, lollipop de atraso, dispersão), **Jornada do Paciente**
