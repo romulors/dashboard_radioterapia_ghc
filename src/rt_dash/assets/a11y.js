@@ -403,6 +403,15 @@
     });
   }
 
+  // Esc fecha a dica do "?" (WCAG 1.4.13: conteúdo em foco ou hover precisa poder ser dispensado).
+  document.addEventListener("keydown", function (ev) {
+    if (ev.key !== "Escape") return;
+    document.querySelectorAll(".ajuda-calculo").forEach(function (b) {
+      ["mouseout", "mouseleave"].forEach(function (tipo) { b.dispatchEvent(new MouseEvent(tipo, { bubbles: tipo === "mouseout" })); });
+      if (document.activeElement === b) b.blur();
+    });
+  });
+
   setInterval(ligar, 700);
   document.addEventListener("DOMContentLoaded", ligar);
 

@@ -37,6 +37,7 @@ Na primeira execução o app monta o cache sozinho; ele é refeito quando as pla
 | **Resultado vs Tendência** | Resultado: sessões dia × noite e funil de planejamento. Tendência: evolução de ciclos por sítio, heatmap temporal e dispersão tempo × desfecho. |
 | **Processos** | Atividades do fluxo por etapa (espera, execução, atraso), heatmap de atrasos por sítio × fluxo e composição sítio → fluxo → status. |
 | **Jornada do Paciente** | Lista de pacientes, ciclos de planejamento, Gantt com esperas destacadas, cascata de tempos e comparação com a referência. Exporta CSV. |
+| **Sobre** | Autoria, fonte dos dados, tecnologia, referências, definições e metas, qualidade dos dados e acessibilidade. |
 
 Os filtros do topo (período, tipo de fluxo, sítio, ambulatorial × internado) valem para todas as abas, e cliques nos gráficos
 filtram as demais visões.

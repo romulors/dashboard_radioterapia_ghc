@@ -7,6 +7,7 @@ import inspect
 import dash_bootstrap_components as dbc
 from dash import dcc, html
 
+from rt_dash.app.ajuda import calculo
 from rt_dash.domain.activities import TIPOS_FLUXO
 from rt_dash.viz import theme as t
 
@@ -159,9 +160,32 @@ def grafico(id_: str, altura: int | None = None, descricao: str = "") -> html.Fi
     """Gráfico acessível (WCAG 1.1.1 e 1.3.1): o resumo em texto e a tabela de dados são gerados dos próprios
     dados a cada atualização por `assets/a11y.js`; `descricao` é o texto inicial, antes do primeiro desenho."""
     estilo = {"height": f"{altura}px"} if altura else None
+    texto_calculo = calculo(id_)
+    ajuda = (
+        [
+            html.Button(
+                "?",
+                id=f"{id_}-ajuda",
+                type="button",
+                className="ajuda-calculo",
+                **{"aria-label": "Como este indicador é calculado", "aria-describedby": f"{id_}-ajuda-texto"},
+            ),
+            dbc.Tooltip(
+                [html.Strong("Como é calculado: "), texto_calculo],
+                id=f"{id_}-ajuda-texto",
+                target=f"{id_}-ajuda",
+                placement="left",
+                trigger="hover focus",
+                className="ajuda-tooltip",
+            ),
+        ]
+        if texto_calculo
+        else []
+    )
     return html.Figure(
         className="grafico-a11y",
         children=[
+            *ajuda,
             dcc.Loading(
                 dcc.Graph(
                     id=id_,

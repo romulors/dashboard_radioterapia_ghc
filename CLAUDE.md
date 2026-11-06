@@ -79,12 +79,14 @@ Regras:
 
 Ordem e conteúdo (composição em `app/abas.py`; cada aba tem uma pergunta de negócio em `PERGUNTAS`):
 **Visão Geral** (contexto e negócio, sem gráficos: propósito, frase-resumo, 4 manchetes com status, fluxo, perguntas,
-mapa das abas, definições e metas, qualidade dos dados, ficha técnica, acessibilidade), **KPIs** (scorecard do mês
+mapa das abas), **KPIs** (scorecard do mês
 com meta/situação/tendência, bullet, win/loss, KPIs e séries mensais, modo apresentação), **Eficácia vs Eficiência**,
 **Resultado vs Tendência** (tendência = ciclos abertos, entradas × saídas, idade dos abertos), **Processos** (fluxo de
-valor por etapa, carta de controle, Pareto, dot strip, atividades, lollipop de atraso, dispersão) e **Jornada do Paciente**.
+valor por etapa, carta de controle, Pareto, dot strip, atividades, lollipop de atraso, dispersão), **Jornada do Paciente**
+e **Sobre** (autoria, fonte, tecnologia, referências, definições e metas, qualidade dos dados, acessibilidade).
 Gráficos novos: cálculos em `metrics/fluxo.py`, figuras em `viz/novos.py`, callbacks em `app/pages/novos.py`.
-Cada indicador do registro tem ficha técnica (`descricao`, `polaridade`, `fonte`, `tipo`) exibida na Visão Geral.
+Cada gráfico tem um ícone “?” (canto superior direito do cartão) que explica o cálculo: textos em `app/ajuda.py`
+(`CALCULO`); séries mensais `g-vg-*`/`g-ap-*` usam a `descricao` do registro. Gráfico novo = acrescentar o texto lá.
 Metas ainda não definidas ficam `null` em `config/settings.yaml` (`pct_no_prazo`, `lead_time_mediana_dias`).
 Proposta que originou esta versão: https://claude.ai/artifact/TySDdDuP9ec9phWBxk7VZs
 
