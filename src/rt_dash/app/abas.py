@@ -608,6 +608,12 @@ def sobre_aba(ctx: AppContext) -> html.Div:
     metas = [
         ("Ocupação do acelerador", ("ok", f"{pct(lo)} a {pct(hi)}")),
         (
+            "Pacientes novos por mês",
+            ("ok", f"acima de {st.meta_pacientes_novos:g}")
+            if st.meta_pacientes_novos
+            else ("sem", "sem meta definida"),
+        ),
+        (
             "Tarefas no prazo",
             ("ok", f"{pct(st.meta_pct_no_prazo[0])} ou mais") if st.meta_pct_no_prazo else ("sem", "sem meta definida"),
         ),

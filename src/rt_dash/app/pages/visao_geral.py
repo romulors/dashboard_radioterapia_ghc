@@ -70,6 +70,7 @@ def registrar(app: Dash, ctx: AppContext) -> None:
                 formato=REGISTRO[i].formato,
                 tipo=REGISTRO[i].grafico,
                 meta=metas.get(i),
+                meta_minima=ctx.settings.meta_pacientes_novos if i == "inicios" else None,
                 mes_selecionado=mes,
                 altura=280,
             )
@@ -91,7 +92,9 @@ def registrar(app: Dash, ctx: AppContext) -> None:
         st = ctx.settings
         mes = (selecao or {}).get("mes")
         return (
-            fig.serie_mensal(pacientes_que_iniciaram(ds, st), mes_selecionado=mes, altura=320),
+            fig.serie_mensal(
+                pacientes_que_iniciaram(ds, st), meta_minima=st.meta_pacientes_novos, mes_selecionado=mes, altura=320
+            ),
             fig.serie_mensal(
                 percentual_por_fluxo(ds, st),
                 formato=".0%",
@@ -119,6 +122,7 @@ def registrar(app: Dash, ctx: AppContext) -> None:
                 REGISTRO[i].calcular(ds, ctx.settings),
                 formato=REGISTRO[i].formato,
                 tipo=REGISTRO[i].grafico,
+                meta_minima=ctx.settings.meta_pacientes_novos if i == "inicios" else None,
                 altura=460,
             )
             for i in APRESENTACAO

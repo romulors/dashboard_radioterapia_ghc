@@ -187,8 +187,8 @@ TOLERANCIA_FAIXA = 0.05  # metas em faixa: 5% abaixo do mínimo ou acima do máx
 def status_meta(valor: float | None, meta: tuple[float, float] | float | None, polaridade: str) -> tuple[str, str]:
     """Status de um valor frente à meta: (código, texto). Código: ok | atencao | fora | sem_meta.
 
-    `meta` pode ser uma faixa (mín, máx) ou um limite único. Polaridade "maior" = quanto maior melhor,
-    "menor" = quanto menor melhor, "faixa" = deve ficar dentro da faixa.
+    `meta` pode ser uma faixa (mín, máx) ou um limite único. Polaridade "maior" = quanto maior melhor (≥ meta),
+    "acima" = estritamente acima da meta, "menor" = quanto menor melhor, "faixa" = deve ficar dentro da faixa.
     """
     if valor is None or valor != valor:
         return "sem_meta", "Sem dado"
@@ -200,8 +200,8 @@ def status_meta(valor: float | None, meta: tuple[float, float] | float | None, p
             return "ok", "Dentro da meta"
         perto = valor <= hi * (1 + TOLERANCIA_LIMITE)
         return ("atencao", "Pouco acima da meta") if perto else ("fora", "Acima da meta")
-    if polaridade == "maior":
-        if valor >= lo:
+    if polaridade in ("maior", "acima"):
+        if valor > lo or (polaridade == "maior" and valor == lo):
             return "ok", "Dentro da meta"
         perto = valor >= lo * (1 - TOLERANCIA_LIMITE)
         return ("atencao", "Pouco abaixo da meta") if perto else ("fora", "Abaixo da meta")

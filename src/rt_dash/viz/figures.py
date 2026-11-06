@@ -45,6 +45,7 @@ def serie_mensal(
     formato: str = ",.0f",
     tipo: str = "linha",
     meta: tuple[float, float] | None = None,
+    meta_minima: float | None = None,
     media_meses: int | None = 6,
     mes_selecionado: str | None = None,
     altura: int = 300,
@@ -109,6 +110,14 @@ def serie_mensal(
             annotation_position="top left",
             annotation_font=dict(size=11, color=t.GHC_VERDE),
         )
+    if meta_minima is not None:
+        fig.add_hline(
+            y=meta_minima,
+            line=dict(color=t.GHC_VERDE, dash="dash", width=1.5),
+            annotation_text=f"Meta: acima de {format(meta_minima, formato)}",
+            annotation_position="top left",
+            annotation_font=dict(size=11, color=t.GHC_VERDE),
+        )
     if media_meses and tipo == "linha" and len(ordem_series) == 1:
         media = df.groupby("mes")["valor"].sum().sort_index().tail(media_meses).mean()
         fig.add_hline(
@@ -126,8 +135,9 @@ def serie_mensal(
     if tipo == "linha":
         total = df.groupby("mes")["valor"].sum() if len(ordem_series) == 1 else df["valor"]
         folga = (total.max() - total.min()) * 0.15 or abs(total.max()) * 0.1 or 1
-        baixo = min(total.min(), meta[0] if meta else total.min()) - folga
-        alto = max(total.max(), meta[1] if meta else total.max()) + folga
+        limites = [*(meta or ()), *([meta_minima] if meta_minima is not None else [])]
+        baixo = min([total.min(), *limites]) - folga
+        alto = max([total.max(), *limites]) + folga
         fig.update_yaxes(range=[baixo, alto])
     fig.update_layout(height=altura, showlegend=len(ordem_series) > 1, clickmode="event")
     return fig

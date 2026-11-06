@@ -15,7 +15,7 @@ _ESPERA_AL = "Espera = início do atendimento − check-in, em minutos; só sess
 CALCULO: dict[str, str] = {
     # Visão Geral: resumo do serviço
     "g-vg-res-novos": "Pacientes distintos com agendamento “Início do Tratamento” no acelerador, por mês. "
-    "A linha tracejada é a média dos últimos 6 meses.",
+    "A linha pontilhada cinza é a média dos últimos 6 meses; a tracejada verde, a meta.",
     "g-vg-res-fluxo": "Ciclos de planejamento de cada tipo de fluxo (Eletivo, Prioridade, Urgência) ÷ total de "
     "ciclos do mês; cada barra soma 100%.",
     "g-vg-res-turno": "Sessões de tratamento por mês, separadas pelo horário agendado: dia até 18h45, noite a partir "
@@ -110,6 +110,7 @@ _settings = None
 _OCUPACAO = ("meta_ocupacao_acelerador", "faixa", "pct")
 _PRAZO = ("meta_pct_no_prazo", "maior", "pct")
 _LEAD = ("meta_lead_time_dias", "menor", "dias")
+_NOVOS = ("meta_pacientes_novos", "acima", "num")
 METAS_GRAFICO = {
     "g-al-ocupacao": _OCUPACAO,
     "g-sc-ocupacao": _OCUPACAO,
@@ -121,6 +122,10 @@ METAS_GRAFICO = {
     "g-nv-controle": _LEAD,
     "g-nv-ridgeline": _LEAD,
     "g-nv-dotstrip": _LEAD,
+    "g-vg-res-novos": _NOVOS,
+    "g-prod-inicios": _NOVOS,
+    "g-vg-inicios": _NOVOS,
+    "g-ap-inicios": _NOVOS,
 }
 
 
@@ -133,13 +138,18 @@ def configurar(settings) -> None:
 def _fmt(v: float, formato: str) -> str:
     n = v * 100 if formato == "pct" else v
     texto = f"{n:.2f}".rstrip("0").rstrip(".").replace(".", ",")
+    if formato == "num":
+        return f"{v:.0f}" if float(v).is_integer() else texto
     return f"{texto}%" if formato == "pct" else f"{texto} dias"
 
 
 def meta_e_tolerancia(id_: str) -> tuple[str, str] | None:
     """(meta, tolerância) do gráfico em texto; None quando o indicador não tem meta."""
     if id_ == "g-sc-winloss":
-        return ("a de cada indicador (ocupação 80–85%; prazo e duração do ciclo quando definidos).", "")
+        return (
+            "a de cada indicador (ocupação 80–85%; pacientes novos, prazo e duração do ciclo quando definidos).",
+            "",
+        )
     if id_ not in METAS_GRAFICO:
         return None
     campo, polaridade, formato = METAS_GRAFICO[id_]
@@ -152,6 +162,12 @@ def meta_e_tolerancia(id_: str) -> tuple[str, str] | None:
         tol = (
             f"até {TOLERANCIA_FAIXA:.0%} além da faixa ({_fmt(lo * (1 - TOLERANCIA_FAIXA), formato)} a "
             f"{_fmt(hi * (1 + TOLERANCIA_FAIXA), formato)}) conta como “atenção”; além disso, “fora da meta”."
+        )
+    elif polaridade == "acima":
+        alvo = f"acima de {_fmt(lo, formato)} por mês"
+        tol = (
+            f"até {TOLERANCIA_LIMITE:.0%} abaixo (de {_fmt(lo * (1 - TOLERANCIA_LIMITE), formato)} "
+            f"a {_fmt(lo, formato)}) conta como “atenção”; abaixo disso, “fora da meta”."
         )
     elif polaridade == "maior":
         alvo = f"{_fmt(lo, formato)} ou mais"

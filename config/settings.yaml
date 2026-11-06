@@ -27,6 +27,8 @@ metas:
     Eletivo: 10
   # Metas ainda não definidas pela gestão: deixe null até decidir (o painel mostra "Sem meta definida").
   # Exemplos de preenchimento: pct_no_prazo: [0.80, 1.0]   lead_time_mediana_dias: 10
+  # Pacientes novos (que iniciaram tratamento) por mês: a meta é ficar ACIMA deste número.
+  pacientes_novos_mes: 60
   pct_no_prazo: null
   lead_time_mediana_dias: null
 

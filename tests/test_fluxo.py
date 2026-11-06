@@ -12,6 +12,9 @@ def test_status_meta_por_polaridade():
     assert fx.status_meta(9, 10, "menor")[0] == "ok"
     assert fx.status_meta(15, 10, "menor")[0] == "fora"
     assert fx.status_meta(0.95, (0.9, 1.0), "maior")[0] == "ok"
+    assert fx.status_meta(61, 60, "acima")[0] == "ok"
+    assert fx.status_meta(60, 60, "acima")[0] == "atencao"
+    assert fx.status_meta(40, 60, "acima")[0] == "fora"
     assert fx.status_meta(0.5, None, "maior") == ("sem_meta", "Sem meta definida")
     assert fx.status_meta(None, (0.8, 0.85), "faixa")[0] == "sem_meta"
 

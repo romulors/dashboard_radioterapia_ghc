@@ -54,6 +54,8 @@ def _texto_meta(meta, polaridade: str, pct: bool) -> str:
     lo, hi = meta if isinstance(meta, tuple | list) else (meta, meta)
     if polaridade == "maior":
         return f"≥ {fmt(lo)}"
+    if polaridade == "acima":
+        return f"acima de {fmt_num(lo)}"
     if polaridade == "menor":
         return f"≤ {fmt(hi)}"
     return f"{fmt(lo)} a {fmt(hi)}"
@@ -102,7 +104,7 @@ def registrar(app: Dash, ctx: AppContext) -> None:
             ("Ocupação do acelerador linear", ocup, st.meta_ocupacao_acelerador, "faixa", True),
             ("Tarefas de planejamento no prazo", prazo, st.meta_pct_no_prazo, "maior", True),
             ("Mediana da duração do ciclo (dias)", lead, st.meta_lead_time_dias, "menor", False),
-            ("Pacientes que iniciaram tratamento", inicios, None, "neutra", False),
+            ("Pacientes novos (iniciaram tratamento)", inicios, st.meta_pacientes_novos, "acima", False),
         ]
         corpo = []
         for nome, serie, meta, pol, pct in linhas_def:
@@ -146,6 +148,7 @@ def registrar(app: Dash, ctx: AppContext) -> None:
                 "Ocupação AL": (ocup, st.meta_ocupacao_acelerador, "faixa"),
                 "No prazo": (prazo, st.meta_pct_no_prazo, "maior"),
                 "Mediana do ciclo": (lead, st.meta_lead_time_dias, "menor"),
+                "Pacientes novos": (inicios, st.meta_pacientes_novos, "acima"),
             }
         )
         return (

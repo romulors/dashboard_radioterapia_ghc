@@ -20,7 +20,7 @@ def _contar(df: pd.DataFrame, por: list[str], nome: str = "valor") -> pd.DataFra
     "inícios",
     origem="J, A",
     descricao="Agendamentos do tipo “Início” no acelerador linear no mês",
-    polaridade="neutra",
+    polaridade="maior",
 )
 def inicios_por_mes(ds: Dataset, _: Settings) -> pd.DataFrame:
     s = ds.sessoes

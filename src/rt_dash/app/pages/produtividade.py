@@ -80,7 +80,7 @@ def registrar(app: Dash, ctx: AppContext) -> None:
         return (
             *valores,
             *notas,
-            fig.serie_mensal(inicios, mes_selecionado=mes_ref),
+            fig.serie_mensal(inicios, meta_minima=ctx.settings.meta_pacientes_novos, mes_selecionado=mes_ref),
             fig.serie_mensal(turno, tipo="barras_empilhadas", mes_selecionado=mes_ref),
             fig.serie_mensal(fluxo, tipo="barras_agrupadas", mes_selecionado=mes_ref),
             f_sitio,
