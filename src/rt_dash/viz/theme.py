@@ -43,7 +43,7 @@ CORES_FLUXO = {
     "Retomografado": "#61C2AA",
     "Sem tipo": "#BFC5CA",
 }
-CORES_TURNO = {"Dia": "#04BABA", "Noite": "#014040"}
+CORES_TURNO = {"Dia": "#038C8C", "Noite": "#026969"}  # gradiente: base (dia) mais clara, topo (noite) mais escuro
 CORES_ETAPA = {
     "Recepção": "#04BABA",
     "Simulação": "#038C8C",
@@ -61,16 +61,16 @@ ESCALA_DIVERGENTE = [[0, NO_PRAZO], [0.5, "#FFFFFF"], [1, ATRASADO]]
 # Modo alto contraste (WCAG 2.2: 1.4.1, 1.4.11). Cores sólidas com pelo menos 4,5:1 contra o branco;
 # cada série também ganha hachura (barras), traço (linhas) e símbolo (marcadores), aplicados em assets/a11y.js.
 ALTO_CONTRASTE = {
-    "#038C8C": "#006B6B",  # Eletivo, Simulação
-    "#04BABA": "#1F4E99",  # Dia, Recepção
-    "#014040": "#1A1A1A",  # Noite
+    "#038C8C": "#006B6B",  # Eletivo, Simulação, Dia
+    "#04BABA": "#1F4E99",  # Recepção
+    "#014040": "#1A1A1A",
     "#C2AA61": "#7A5A00",  # Prioridade
     "#8C3603": "#8C3603",  # Urgência, atrasado
     "#180042": "#3B1F8C",  # Braquiterapia
     "#61C2AA": "#4D4D4D",  # Retomografado
     "#BFC5CA": "#6E6E6E",  # Sem tipo
     "#9CA3AF": "#6E6E6E",  # neutro
-    "#026969": "#1A1A1A",  # Planejamento
+    "#026969": "#1A1A1A",  # Planejamento, Noite
     "#038C3E": "#2E6B1F",  # Pré-Tratamento, no prazo
     "#8C5A03": "#7A5A00",  # Controle de Qualidade
     "#21826A": "#1F6B57",
