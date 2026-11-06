@@ -193,13 +193,44 @@ body.alto-contraste .status { background: #fff; border-width: 2px; }
 /* ---------- Ajuda "?" de cada gráfico: como o indicador é calculado ---------- */
 /* Fica no canto superior direito do cartão; discreto (cinza, contraste 3:1, WCAG 1.4.11) até receber foco ou mouse. */
 .cartao > .card-body, .slide { position: relative; }
-.cartao > .card-body:has(.ajuda-calculo) > .cartao-titulo,
-.cartao > .card-body:has(.ajuda-calculo) > .cartao-sub { padding-right: 30px; }
-.ajuda-calculo { position: absolute; top: 10px; right: 12px; z-index: 2; width: 22px; height: 22px; padding: 0;
+.cartao > .card-body:has(.expandir-grafico) > .cartao-titulo,
+.cartao > .card-body:has(.expandir-grafico) > .cartao-sub { padding-right: 64px; }
+.ajuda-calculo { position: absolute; top: 10px; right: 42px; z-index: 2; width: 22px; height: 22px; padding: 0;
   border-radius: 50%; border: 1.5px solid #8A9696; background: transparent; color: #8A9696;
-  font: 700 13px/1 inherit; cursor: help; opacity: .75; transition: opacity .15s, color .15s, border-color .15s; }
+  display: inline-flex; align-items: center; justify-content: center;
+  font-family: inherit; font-size: 13px; font-weight: 700; line-height: 1; cursor: help; opacity: .75; transition: opacity .15s, color .15s, border-color .15s; }
 .ajuda-calculo:hover, .ajuda-calculo:focus-visible { opacity: 1; color: var(--ghc-petroleo); border-color: var(--ghc-petroleo); }
 .ajuda-tooltip .tooltip-inner { max-width: 320px; text-align: left; font-size: 12.5px; line-height: 1.4; padding: 8px 10px; }
 body.alto-contraste .ajuda-calculo { opacity: 1; color: #000; border-color: #000; }
 @media (forced-colors: active) { .ajuda-calculo { opacity: 1; border-color: ButtonText; color: ButtonText; } }
 @media (prefers-reduced-motion: reduce) { .ajuda-calculo { transition: none; } }
+
+/* ---------- Expandir gráfico: ocupa a largura da tela para focar a atenção ---------- */
+.expandir-grafico { position: absolute; top: 9px; right: 10px; z-index: 2; width: 26px; height: 26px; padding: 0;
+  border: 0; border-radius: 6px; background: transparent; color: #8A9696; cursor: zoom-in; opacity: .75;
+  display: inline-flex; align-items: center; justify-content: center; transition: opacity .15s, color .15s, background .15s; }
+.expandir-grafico:hover, .expandir-grafico:focus-visible { opacity: 1; color: var(--ghc-petroleo); background: #E6F2F2; }
+.icone-expandir { width: 18px; height: 18px; background: currentColor;
+  -webkit-mask: var(--icone-expandir) center / contain no-repeat; mask: var(--icone-expandir) center / contain no-repeat; }
+:root {
+  --icone-expandir: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14 3h7v7M10 21H3v-7M21 3l-7 7M3 21l7-7M3 10V3h7M21 14v7h-7M3 3l7 7M21 21l-7-7'/%3E%3C/svg%3E");
+  --icone-recolher: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 4v5h5M9 20v-5H4M15 9l6-6M9 15l-6 6M4 9h5V4M20 15h-5v5M9 9L3 3M15 15l6 6'/%3E%3C/svg%3E");
+}
+.tooltip-expandir .dica-recolher { display: none; }
+body.grafico-em-foco .tooltip-expandir .dica-expandir { display: none; }
+body.grafico-em-foco .tooltip-expandir .dica-recolher { display: inline; }
+
+/* Cartão expandido: sobreposto ao painel, largura total; a altura do gráfico é recalculada em a11y.js */
+body.grafico-em-foco { overflow: hidden; }
+.fundo-foco { position: fixed; inset: 0; background: rgba(1, 40, 40, .55); z-index: 1060; }
+.cartao-expandido { position: fixed !important; inset: 16px; z-index: 1061; margin: 0 !important; overflow: auto;
+  box-shadow: 0 12px 40px rgba(0,0,0,.35); }
+.cartao-expandido .expandir-grafico { cursor: zoom-out; opacity: 1; color: var(--ghc-petroleo); }
+.cartao-expandido .icone-expandir { -webkit-mask-image: var(--icone-recolher); mask-image: var(--icone-recolher); }
+.cartao-expandido .cartao-titulo { font-size: 20px; }
+.cartao-expandido .cartao-sub { font-size: 14px; }
+.cartao-expandido .js-plotly-plot, .cartao-expandido .dash-graph { height: auto !important; }
+body.grafico-em-foco .tooltip { z-index: 1070; }
+body.alto-contraste .expandir-grafico { opacity: 1; color: #000; }
+@media (forced-colors: active) { .expandir-grafico { opacity: 1; color: ButtonText; } .icone-expandir { background: ButtonText; } }
+@media (prefers-reduced-motion: reduce) { .expandir-grafico { transition: none; } }

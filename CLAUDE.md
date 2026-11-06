@@ -87,6 +87,8 @@ e **Sobre** (autoria, fonte, tecnologia, referências, definições e metas, qua
 Gráficos novos: cálculos em `metrics/fluxo.py`, figuras em `viz/novos.py`, callbacks em `app/pages/novos.py`.
 Cada gráfico tem um ícone “?” (canto superior direito do cartão) que explica o cálculo: textos em `app/ajuda.py`
 (`CALCULO`); séries mensais `g-vg-*`/`g-ap-*` usam a `descricao` do registro. Gráfico novo = acrescentar o texto lá.
+Ao lado do “?” fica o botão de expandir: o cartão vira uma sobreposição na largura da tela e a altura do gráfico
+acompanha a proporção (`assets/a11y.js`, Esc ou o mesmo botão recolhe; foco preso no cartão enquanto expandido).
 Metas ainda não definidas ficam `null` em `config/settings.yaml` (`pct_no_prazo`, `lead_time_mediana_dias`).
 Proposta que originou esta versão: https://claude.ai/artifact/TySDdDuP9ec9phWBxk7VZs
 

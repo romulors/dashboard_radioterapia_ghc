@@ -412,6 +412,95 @@
     });
   });
 
+  // ------------------------------------------------------------------ Expandir gráfico (foco num só gráfico)
+  var expandido = null; // { botao, caixa, gd, fundo, original }
+
+  function caixaDo(botao) {
+    return botao.closest(".cartao") || botao.closest(".slide") || botao.closest("figure");
+  }
+
+  function ajustarAltura(estado) {
+    var gd = estado.gd, o = estado.original;
+    if (!gd || !window.Plotly) return;
+    var largura = gd.parentElement ? gd.parentElement.clientWidth : gd.offsetWidth;
+    var topo = gd.getBoundingClientRect().top - estado.caixa.getBoundingClientRect().top;
+    var disponivel = estado.caixa.clientHeight - topo - 110; // espaço do resumo em texto e do botão da tabela
+    var proporcional = o.altura * (largura / Math.max(o.largura, 1));
+    var altura = Math.round(Math.max(o.altura, Math.min(disponivel, proporcional)));
+    var mudar = { height: altura, width: largura };
+    window.Plotly.relayout(gd, mudar);
+  }
+
+  function expandir(botao) {
+    if (expandido) recolher();
+    var caixa = caixaDo(botao);
+    var fig = botao.closest("figure");
+    var gd = fig && fig.querySelector(".js-plotly-plot");
+    if (!caixa) return;
+    var fundo = document.createElement("div");
+    fundo.className = "fundo-foco";
+    fundo.addEventListener("click", recolher);
+    document.body.appendChild(fundo);
+    expandido = {
+      botao: botao, caixa: caixa, gd: gd, fundo: fundo,
+      original: gd ? {
+        altura: gd.offsetHeight, largura: gd.offsetWidth,
+        layoutAltura: gd.layout && gd.layout.height, layoutLargura: gd.layout && gd.layout.width,
+      } : null,
+    };
+    caixa.classList.add("cartao-expandido");
+    caixa.setAttribute("role", "dialog");
+    caixa.setAttribute("aria-modal", "true");
+    document.body.classList.add("grafico-em-foco");
+    botao.setAttribute("aria-expanded", "true");
+    botao.setAttribute("aria-label", "Recolher gráfico e voltar ao painel");
+    if (gd) requestAnimationFrame(function () { ajustarAltura(expandido); });
+    botao.focus();
+  }
+
+  function recolher() {
+    if (!expandido) return;
+    var e = expandido;
+    expandido = null;
+    e.caixa.classList.remove("cartao-expandido");
+    e.caixa.removeAttribute("role");
+    e.caixa.removeAttribute("aria-modal");
+    document.body.classList.remove("grafico-em-foco");
+    if (e.fundo.parentNode) e.fundo.parentNode.removeChild(e.fundo);
+    e.botao.setAttribute("aria-expanded", "false");
+    e.botao.setAttribute("aria-label", "Expandir gráfico para a largura total da tela");
+    if (e.gd && window.Plotly) {
+      var volta = { height: e.original.layoutAltura || e.original.altura };
+      volta.width = e.original.layoutLargura || null;
+      window.Plotly.relayout(e.gd, volta).then(function () { window.Plotly.Plots.resize(e.gd); });
+    }
+    e.botao.focus();
+  }
+
+  document.addEventListener("click", function (ev) {
+    var botao = ev.target.closest && ev.target.closest(".expandir-grafico");
+    if (!botao) return;
+    ev.preventDefault();
+    if (expandido && expandido.botao === botao) recolher(); else expandir(botao);
+  });
+
+  document.addEventListener("keydown", function (ev) {
+    if (!expandido) return;
+    if (ev.key === "Escape") { ev.preventDefault(); recolher(); return; }
+    if (ev.key !== "Tab") return;
+    // Mantém o foco dentro do gráfico expandido (WCAG 2.4.3).
+    var focaveis = Array.prototype.filter.call(
+      expandido.caixa.querySelectorAll("button, summary, a[href], input, select, [tabindex]:not([tabindex='-1'])"),
+      function (el) { return el.offsetParent !== null; }
+    );
+    if (!focaveis.length) return;
+    var primeiro = focaveis[0], ultimo = focaveis[focaveis.length - 1];
+    if (ev.shiftKey && document.activeElement === primeiro) { ev.preventDefault(); ultimo.focus(); }
+    else if (!ev.shiftKey && document.activeElement === ultimo) { ev.preventDefault(); primeiro.focus(); }
+  });
+
+  window.addEventListener("resize", function () { if (expandido && expandido.gd) ajustarAltura(expandido); });
+
   setInterval(ligar, 700);
   document.addEventListener("DOMContentLoaded", ligar);
 

@@ -182,9 +182,32 @@ def grafico(id_: str, altura: int | None = None, descricao: str = "") -> html.Fi
         if texto_calculo
         else []
     )
+    expandir = [
+        html.Button(
+            html.Span(className="icone-expandir", **{"aria-hidden": "true"}),
+            id=f"{id_}-expandir",
+            type="button",
+            className="expandir-grafico",
+            **{"aria-label": "Expandir gráfico para a largura total da tela", "aria-expanded": "false"},
+        ),
+        dbc.Tooltip(
+            [
+                html.Span(
+                    [html.Strong("Expandir: "), "mostra só este gráfico, na largura total da tela."],
+                    className="dica-expandir",
+                ),
+                html.Span([html.Strong("Recolher: "), "volta ao painel (ou tecle Esc)."], className="dica-recolher"),
+            ],
+            target=f"{id_}-expandir",
+            placement="left",
+            trigger="hover focus",
+            className="ajuda-tooltip tooltip-expandir",
+        ),
+    ]
     return html.Figure(
         className="grafico-a11y",
         children=[
+            *expandir,
             *ajuda,
             dcc.Loading(
                 dcc.Graph(
