@@ -10,7 +10,7 @@ from __future__ import annotations
 import dash_bootstrap_components as dbc
 from dash import dcc, html
 
-from rt_dash.app.components import cartao, grafico, kpi, kpi_meta
+from rt_dash.app.components import cartao, grafico, kpi
 from rt_dash.app.context import AppContext
 from rt_dash.app.pages import atendimento, atividades, jornada, produtividade, visao_geral
 from rt_dash.domain.activities import ETAPAS_FLUXO
@@ -142,6 +142,47 @@ def _perguntas_por_aba(mapa: list[tuple[str, str]]) -> html.Div:
     return html.Div(cartoes, className="perguntas-por-aba")
 
 
+RESUMO_SERVICO = [
+    (
+        "g-vg-res-novos",
+        "Pacientes novos por mês",
+        "Pacientes distintos que iniciaram tratamento no acelerador",
+        ("eficacia-eficiencia", "Eficácia"),
+    ),
+    (
+        "g-vg-res-fluxo",
+        "Distribuição entre Eletivos, Prioridades e Urgências",
+        "Percentual dos planejamentos de cada mês por tipo de fluxo",
+        ("eficacia-eficiencia", "Eficácia"),
+    ),
+    (
+        "g-vg-res-turno",
+        "Sessões de radioterapia – dia e noite",
+        "Dia: até 18h45 · Noite: a partir das 19h",
+        ("resultado-tendencia", "Resultado vs Tendência"),
+    ),
+    (
+        "g-vg-res-sitio",
+        "Pacientes tratados por sítio",
+        "Pacientes distintos no período · 15 sítios com mais pacientes",
+        ("eficacia-eficiencia", "Eficácia"),
+    ),
+]
+
+
+def _resumo_servico() -> dbc.Row:
+    return dbc.Row(
+        [
+            dbc.Col(
+                cartao(titulo, grafico(id_, altura=320), _ir(aba, f"Ver em {rotulo} →", id_), subtitulo=sub),
+                lg=6,
+            )
+            for id_, titulo, sub, (aba, rotulo) in RESUMO_SERVICO
+        ],
+        className="g-3",
+    )
+
+
 def visao_geral_aba(ctx: AppContext) -> html.Div:
     mapa = [
         ("kpis", "KPIs"),
@@ -173,20 +214,10 @@ def visao_geral_aba(ctx: AppContext) -> html.Div:
                     className="grade-mapa",
                 ),
             ),
-            html.Section(
-                [
-                    html.H2("Situação no período filtrado", className="secao-titulo"),
-                    html.Div(
-                        [
-                            kpi_meta("vg-h-inicios", "Pacientes que iniciaram tratamento", ("kpis", "KPIs")),
-                            kpi_meta("vg-h-ciclo", "Mediana da duração do ciclo", ("processos", "Processos")),
-                            kpi_meta("vg-h-prazo", "Tarefas no prazo", ("kpis", "KPIs")),
-                            kpi_meta("vg-h-ocupacao", "Ocupação do acelerador", ("eficacia-eficiencia", "Eficácia")),
-                        ],
-                        className="linha-kpis linha-manchete",
-                    ),
-                ],
-                className="secao",
+            _secao(
+                "Resumo do serviço no período filtrado",
+                "Quatro indicadores para uma leitura rápida da situação; cada gráfico leva à aba onde é analisado.",
+                _resumo_servico(),
             ),
             dbc.Row(
                 [

@@ -1,14 +1,18 @@
-"""Visão Geral (manchetes de negócio) e séries mensais do registro + modo apresentação (estes na aba KPIs)."""
+"""Visão Geral (resumo do serviço em 4 gráficos), séries mensais do registro e modo apresentação."""
 
 from __future__ import annotations
 
 from dash import Dash, Input, Output, State
 
-from rt_dash.app.components import fmt_num, fmt_pct, status_badge
+from rt_dash.app.components import fmt_num, fmt_pct
 from rt_dash.app.context import AppContext
 from rt_dash.metrics import REGISTRO
-from rt_dash.metrics.fluxo import status_meta
-from rt_dash.metrics.monthly import ocupacao_acelerador, pacientes_por_sitio
+from rt_dash.metrics.monthly import (
+    pacientes_por_sitio,
+    pacientes_que_iniciaram,
+    percentual_por_fluxo,
+    sessoes_por_turno,
+)
 from rt_dash.viz import figures as fig
 
 # Indicadores do formato resumido de agosto/2026 (modo apresentação)
@@ -73,39 +77,32 @@ def registrar(app: Dash, ctx: AppContext) -> None:
         ]
         return (*valores, *notas, *figuras)
 
-    manchetes = ["vg-h-inicios", "vg-h-ciclo", "vg-h-prazo", "vg-h-ocupacao"]
-
     @app.callback(
-        [Output(f"{i}-{campo}", "children") for i in manchetes for campo in ("valor", "status", "nota")],
+        Output("g-vg-res-novos", "figure"),
+        Output("g-vg-res-fluxo", "figure"),
+        Output("g-vg-res-turno", "figure"),
+        Output("g-vg-res-sitio", "figure"),
         Input("store-filtros", "data"),
+        Input("store-selecao", "data"),
     )
-    def manchete(estado):
+    def resumo_servico(estado, selecao):
+        """Resumo para a diretoria: os quatro gráficos que substituíram os números de manchete."""
         ds = ctx.dados(estado)
         st = ctx.settings
-        c = ds.ciclos[ds.ciclos["tem_importacao"]]
-        inicios = ds.sessoes[ds.sessoes["tipo_agendamento"] == "Início"]["paciente_id"].nunique()
-        ciclo = c["lead_time_dias"].median()
-        prazo = ds.jornada["no_prazo"].dropna().mean()
-        ocup = ocupacao_acelerador(ds, st)["valor"].mean()
-        s_ciclo = status_meta(ciclo, st.meta_lead_time_dias, "menor")
-        s_prazo = status_meta(prazo, st.meta_pct_no_prazo, "maior")
-        s_ocup = status_meta(ocup, st.meta_ocupacao_acelerador, "faixa")
-        meta_txt = f"meta {st.meta_ocupacao_acelerador[0]:.0%}–{st.meta_ocupacao_acelerador[1]:.0%}"
-        saida = [
-            fmt_num(inicios),
-            status_badge("sem_meta", "Volume, sem meta"),
-            "pacientes distintos no período",
-            fmt_num(ciclo, 1, " dias"),
-            status_badge(*s_ciclo),
-            f"{fmt_num(len(c))} ciclos com TC importada",
-            fmt_pct(prazo),
-            status_badge(*s_prazo),
-            "término até o vencimento",
-            fmt_pct(ocup),
-            status_badge(*s_ocup),
-            f"média mensal · {meta_txt}",
-        ]
-        return saida
+        mes = (selecao or {}).get("mes")
+        return (
+            fig.serie_mensal(pacientes_que_iniciaram(ds, st), mes_selecionado=mes, altura=320),
+            fig.serie_mensal(
+                percentual_por_fluxo(ds, st),
+                formato=".0%",
+                tipo="barras_100",
+                media_meses=None,
+                mes_selecionado=mes,
+                altura=320,
+            ),
+            fig.serie_mensal(sessoes_por_turno(ds, st), tipo="barras_empilhadas", mes_selecionado=mes, altura=320),
+            fig.barras_sitio(pacientes_por_sitio(ds), top=15, altura=320),
+        )
 
     @app.callback(
         [Output("vg-modal", "is_open")]

@@ -13,6 +13,15 @@ _DURACAO_CICLO = "Duração do ciclo = dias entre o início do ciclo e o términ
 _ESPERA_AL = "Espera = início do atendimento − check-in, em minutos; só sessões de tratamento entre −60 e 240 min."
 
 CALCULO: dict[str, str] = {
+    # Visão Geral: resumo do serviço
+    "g-vg-res-novos": "Pacientes distintos com agendamento “Início do Tratamento” no acelerador, por mês. "
+    "A linha tracejada é a média dos últimos 6 meses.",
+    "g-vg-res-fluxo": "Ciclos de planejamento de cada tipo de fluxo (Eletivo, Prioridade, Urgência) ÷ total de "
+    "ciclos do mês; cada barra soma 100%.",
+    "g-vg-res-turno": "Sessões de tratamento por mês, separadas pelo horário agendado: dia até 18h45, noite a partir "
+    "das 19h.",
+    "g-vg-res-sitio": "Pacientes distintos com sessão de tratamento no período filtrado, por sítio do curso "
+    "(15 maiores).",
     # KPIs / scorecard
     "g-ap-sitios": "Pacientes distintos com sessão de tratamento no mês, agrupados pelo sítio do curso.",
     "g-sc-ocupacao": "Sessões de tratamento ÷ (vagas por dia × dias com atendimento) no mês de referência, "
