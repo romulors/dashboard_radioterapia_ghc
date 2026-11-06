@@ -35,11 +35,7 @@ def cabecalho() -> html.Header:
         children=[
             html.Div(
                 className="ghc-marca",
-                children=[
-                    html.Span("GHC", className="ghc-logo"),
-                    html.Span("100% SUS", className="ghc-sus"),
-                    html.Span("Grupo Hospitalar Conceição", className="ghc-grupo"),
-                ],
+                children=html.Img(src="/assets/ghc_logo.png", alt="GHC · 100% SUS · Grupo Hospitalar Conceição", className="ghc-logo-img"),
             ),
             html.Div(
                 className="ghc-titulo",

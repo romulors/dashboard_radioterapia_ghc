@@ -15,52 +15,37 @@ TEXTO = "#2B2B2B"
 TEXTO_SECUNDARIO = "#6B7280"
 GRADE = "#E5E7EB"
 
+# Paletas de referência (Adobe Color, pasta Material Referência)
+PALETA_ACESSIVEIS = ["#038C8C", "#038C3E", "#8C5A03", "#8C3603", "#143737"]
+PALETA_GRADIENTE = ["#05E3E3", "#04BABA", "#038C8C", "#026969", "#014040"]
+PALETA_COMPLEMENTARES = ["#004231", "#21826A", "#61C2AA", "#974B32", "#421000"]
+PALETA_CONTRASTE = ["#004231", "#32977E", "#423F00", "#421000", "#180042"]
+# Séries sem cor fixa (sítios, etapas do funil): tons alternados para separar categorias vizinhas
+PALETA_CATEGORICA = ["#038C8C", "#8C5A03", "#21826A", "#8C3603", "#143737", "#61C2AA", "#974B32", "#32977E", "#180042", "#423F00"]
+
 # Dados: cores com significado fixo
 CORES_FLUXO = {
-    "Eletivo": "#2F6EBA",
-    "Prioridade": "#E08A00",
-    "Urgência": "#C62828",
-    "Braquiterapia": "#7B5EA7",
-    "Retomografado": "#8A9BA3",
+    "Eletivo": "#038C8C",
+    "Prioridade": "#C2AA61",
+    "Urgência": "#8C3603",
+    "Braquiterapia": "#180042",
+    "Retomografado": "#61C2AA",
     "Sem tipo": "#BFC5CA",
 }
-CORES_TURNO = {"Dia": "#2F6EBA", "Noite": GHC_VERDE}
+CORES_TURNO = {"Dia": "#04BABA", "Noite": "#014040"}
 CORES_ETAPA = {
-    "Recepção": "#9DB8C9",
-    "Simulação": "#5E9CB0",
-    "Planejamento": GHC_PETROLEO,
-    "Pré-Tratamento": "#3E7D5A",
-    "Controle de Qualidade": "#7A6A9B",
+    "Recepção": "#04BABA",
+    "Simulação": "#038C8C",
+    "Planejamento": "#026969",
+    "Pré-Tratamento": "#038C3E",
+    "Controle de Qualidade": "#8C5A03",
 }
-NO_PRAZO = "#2E8B57"
-ATRASADO = "#C62828"
+NO_PRAZO = "#038C3E"
+ATRASADO = "#8C3603"
 DESTAQUE = GHC_PETROLEO
 NEUTRO = "#9CA3AF"
-ESCALA_SEQUENCIAL = [[0, "#FFFFFF"], [1, GHC_PETROLEO]]
+ESCALA_SEQUENCIAL = [[0, "#FFFFFF"], [0.25, "#04BABA"], [0.5, "#038C8C"], [0.75, "#026969"], [1, "#014040"]]
 ESCALA_DIVERGENTE = [[0, NO_PRAZO], [0.5, "#FFFFFF"], [1, ATRASADO]]
-
-# Cores adicionais das paletas Adobe para visualizações multidimensionais
-CORES_ADOBE_PALETTE1 = ["#004231", "#423200", "#3C0042", "#32977E", "#C2AA61"]
-CORES_ADOBE_PALETTE2 = ["#004231", "#421C00", "#420400", "#61C2AA", "#C28961"]
-CORES_ADOBE_PALETTE3 = ["#004231", "#17755E", "#43A88F", "#84DBC5", "#CCFFF2"]
-CORES_ADOBE_PALETTE4 = ["#004231", "#00EBB0", "#00C291", "#009973", "#007054"]
-
-# Paleta sequencial ampliada (para gradientes em heatmaps)
-CORES_SEQUENCIAL = [
-    "#FFFFFF",
-    "#F0F8F7",
-    "#E1F1F0",
-    "#D2EBE9",
-    "#C3E5E2",
-    "#B4DFDB",
-    "#84DBC5",
-    "#61C2AA",
-    "#32977E",
-    "#17755E",
-    "#00C291",
-    "#009973",
-    "#004231",
-]
 
 FONTE = "Inter, 'Segoe UI', Roboto, Arial, sans-serif"
 
@@ -78,7 +63,7 @@ def registrar_template() -> None:
             title=dict(font=dict(size=15, color=TEXTO), x=0, xanchor="left"),
             paper_bgcolor=CARTAO,
             plot_bgcolor=CARTAO,
-            colorway=[CORES_FLUXO["Eletivo"], CORES_FLUXO["Prioridade"], GHC_VERDE, NEUTRO],
+            colorway=PALETA_CATEGORICA,
             margin=dict(l=48, r=16, t=40, b=40),
             xaxis=dict(showgrid=False, linecolor=GRADE, ticks="outside", tickcolor=GRADE),
             yaxis=dict(gridcolor=GRADE, zeroline=False, linecolor=GRADE),

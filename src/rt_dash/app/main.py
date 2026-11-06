@@ -13,6 +13,7 @@ import dash_bootstrap_components as dbc
 from dash import Dash, Input, Output, State, dcc, html, no_update
 from dash import ctx as dash_ctx
 
+from rt_dash.app.abas import ABAS
 from rt_dash.app.components import barra_filtros, cabecalho
 from rt_dash.app.context import AppContext
 from rt_dash.app.pages import analise_multidimensional, atendimento, atividades, jornada, produtividade, visao_geral
@@ -20,14 +21,7 @@ from rt_dash.config import DEFAULT_SETTINGS, Settings, load_settings
 from rt_dash.data import Dataset, carregar_dataset
 from rt_dash.viz.theme import registrar_template, rotulo_mes
 
-PAGINAS = [
-    ("analise-multidimensional", "Análise Multidimensional", analise_multidimensional),
-    ("produtividade", "Produtividade", produtividade),
-    ("visao-geral", "Visão Geral", visao_geral),
-    ("atividades", "Atividades", atividades),
-    ("jornada", "Jornada do Paciente", jornada),
-    ("atendimento", "Atendimento no AL", atendimento),
-]
+MODULOS = [analise_multidimensional, produtividade, visao_geral, atividades, jornada, atendimento]
 
 ASSETS = Path(__file__).resolve().parents[1] / "assets"
 
@@ -61,10 +55,10 @@ def criar_app(settings: Settings, ds: Dataset) -> Dash:
             ),
             dbc.Tabs(
                 id="abas",
-                active_tab="produtividade",
+                active_tab="visao-geral",
                 className="abas",
                 children=[
-                    dbc.Tab(pagina.layout(contexto), tab_id=tid, label=rotulo) for tid, rotulo, pagina in PAGINAS
+                    dbc.Tab(montar(contexto), tab_id=tid, label=rotulo) for tid, rotulo, montar in ABAS
                 ],
             ),
             html.Footer(
@@ -74,8 +68,8 @@ def criar_app(settings: Settings, ds: Dataset) -> Dash:
         ],
     )
     _registrar_estado(app, contexto)
-    for _, _, pagina in PAGINAS:
-        pagina.registrar(app, contexto)
+    for modulo in MODULOS:
+        modulo.registrar(app, contexto)
     return app
 
 

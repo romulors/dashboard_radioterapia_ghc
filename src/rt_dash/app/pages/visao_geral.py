@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
-import dash_bootstrap_components as dbc
-from dash import Dash, Input, Output, State, html
+from dash import Dash, Input, Output, State
 
-from rt_dash.app.components import cartao, fmt_num, fmt_pct, grafico, kpi
+from rt_dash.app.components import fmt_num, fmt_pct
 from rt_dash.app.context import AppContext
 from rt_dash.metrics import REGISTRO
 from rt_dash.metrics.monthly import pacientes_por_sitio
@@ -27,60 +26,6 @@ KPIS = [
 def _metas(ctx: AppContext) -> dict[str, tuple[float, float]]:
     return {"ocupacao_acelerador": ctx.settings.meta_ocupacao_acelerador}
 
-
-def layout(ctx: AppContext) -> html.Div:
-    cartoes = []
-    for ind in REGISTRO.values():
-        sub = f"{ind.unidade} · origem {ind.origem}" + (f" · {ind.nota}" if ind.nota else "")
-        cartoes.append(dbc.Col(cartao(ind.titulo, grafico(f"g-vg-{ind.id}"), subtitulo=sub), lg=6, xxl=4))
-    cartoes.append(
-        dbc.Col(
-            cartao("Pacientes tratados por sítio", grafico("g-vg-sitios"), subtitulo="pacientes distintos no período"),
-            lg=6,
-            xxl=4,
-        )
-    )
-    return html.Div(
-        [
-            html.Div(
-                className="linha-controles",
-                children=[
-                    html.Span(
-                        "Clique num mês de qualquer gráfico para filtrar as outras abas por ele.", className="nota"
-                    ),
-                    dbc.Button("Modo apresentação", id="vg-apresentar", className="botao-ghc ms-auto"),
-                ],
-            ),
-            html.Div([kpi(i, t) for i, t in KPIS], className="linha-kpis"),
-            dbc.Row(cartoes, className="g-3"),
-            dbc.Modal(
-                [
-                    dbc.ModalHeader(dbc.ModalTitle("Indicadores Radioterapia · formato de apresentação")),
-                    dbc.ModalBody(
-                        [
-                            html.Div(
-                                [html.H2(REGISTRO[i].titulo, className="slide-titulo"), grafico(f"g-ap-{i}")],
-                                className="slide",
-                            )
-                            for i in APRESENTACAO
-                        ]
-                        + [
-                            html.Div(
-                                [
-                                    html.H2("Pacientes tratados por sítio", className="slide-titulo"),
-                                    grafico("g-ap-sitios"),
-                                ],
-                                className="slide",
-                            )
-                        ]
-                    ),
-                ],
-                id="vg-modal",
-                fullscreen=True,
-                is_open=False,
-            ),
-        ]
-    )
 
 
 def registrar(app: Dash, ctx: AppContext) -> None:

@@ -77,18 +77,23 @@ Regras:
 
 ## Abas implementadas
 
-**Produtividade** (gestores: inícios por mês, sessões dia × noite, planejamentos por tipo, pacientes por
-sítio), **Visão Geral** (KPIs + indicadores mensais; "modo apresentação"), **Atividades** (fluxo como
-navegação), **Jornada do Paciente** (lista + Gantt por ciclo + cascata de esperas + CSV),
-**Atendimento no AL** (ocupação, check-in → início, duração por sítio, dia × noite).
+Ordem e conteúdo (composição em `app/abas.py`, tipos de indicador conforme scopi.com.br/blog/tipos-de-indicadores):
+**Visão Geral** (resumo + "modo apresentação"), **KPIs** (KPIs do mês, acelerador e demais séries mensais),
+**Eficácia vs Eficiência** (objetivo atingido × recursos/tempo gastos), **Resultado vs Tendência** (o que ocorreu ×
+sinais de evolução), **Processos** (atividades, atrasos, composição) e **Jornada do Paciente** (lista + Gantt + CSV).
+Os callbacks seguem nos módulos de `pages/`; `abas.py` só decide onde cada cartão aparece (cada id uma única vez).
 Filtragem cruzada com estado único em `dcc.Store` (`store-filtros`, `store-selecao`).
 
 ## Paleta
 
 - Moldura GHC: `#004231` (verde escuro), `#006E77` (petróleo), `#7ABBB1` (verde-água), fundo `#F4F6F6`.
-- Tipo de fluxo: Eletivo `#2F6EBA`, Prioridade `#E08A00`, Urgência `#C62828`,
-  Braquiterapia `#7B5EA7`, Retomografado `#8A9BA3`.
-- No prazo `#2E8B57` / atrasado `#C62828`, sempre com ícone ou texto.
+- Referências de cor em `Material Referência/Cores - *.jpeg` (acessíveis, complementares, contraste, gradiente),
+  definidas em `viz/theme.py` como `PALETA_ACESSIVEIS`, `PALETA_COMPLEMENTARES`, `PALETA_CONTRASTE`,
+  `PALETA_GRADIENTE` (e `PALETA_CATEGORICA` para séries sem cor fixa).
+- Tipo de fluxo: Eletivo `#038C8C`, Prioridade `#C2AA61`, Urgência `#8C3603`,
+  Braquiterapia `#180042`, Retomografado `#61C2AA`. Dia `#04BABA` (clara) / Noite `#014040` (escura), do gradiente.
+- Escala sequencial (heatmaps): branco → `#04BABA` → `#038C8C` → `#026969` → `#014040` (gradiente).
+- No prazo `#038C3E` / atrasado `#8C3603`, sempre com ícone ou texto.
 - Máx. 5–8 cores categóricas; sem arco-íris; escalas sequenciais de uma matiz.
 
 ## Stack e comandos

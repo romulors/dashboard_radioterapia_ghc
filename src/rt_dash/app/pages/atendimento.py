@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
-import dash_bootstrap_components as dbc
-from dash import Dash, Input, Output, html
+from dash import Dash, Input, Output
 
-from rt_dash.app.components import cartao, fmt_num, fmt_pct, grafico, kpi
+from rt_dash.app.components import fmt_num, fmt_pct
 from rt_dash.app.context import AppContext
 from rt_dash.metrics.monthly import (
     duracao_media_sessao,
@@ -23,76 +22,6 @@ KPIS = [
     ("al-k-pacientes", "Pacientes atendidos"),
 ]
 
-
-def layout(ctx: AppContext) -> html.Div:
-    vagas = ctx.settings.acelerador.vagas_por_dia
-    return html.Div(
-        [
-            html.Div([kpi(i, t) for i, t in KPIS], className="linha-kpis"),
-            dbc.Row(
-                [
-                    dbc.Col(
-                        cartao(
-                            "Taxa de ocupação do acelerador linear",
-                            grafico("g-al-ocupacao"),
-                            subtitulo=f"Sessões ÷ ({vagas} vagas/dia × dias com atendimento) · meta 80–85%",
-                        ),
-                        lg=6,
-                    ),
-                    dbc.Col(
-                        cartao(
-                            "Sessões – dia e noite",
-                            grafico("g-al-turno"),
-                            subtitulo="Dia: até 18h45 · Noite: a partir das 19h",
-                        ),
-                        lg=6,
-                    ),
-                ],
-                className="g-3",
-            ),
-            dbc.Row(
-                [
-                    dbc.Col(
-                        cartao(
-                            "Espera entre check-in e início do atendimento",
-                            grafico("g-al-espera"),
-                            subtitulo="P9 · atendimentos com espera entre −60 e 240 min",
-                        ),
-                        lg=6,
-                    ),
-                    dbc.Col(
-                        cartao(
-                            "Espera por hora agendada", grafico("g-al-espera-hora"), subtitulo="Mediana e faixa P25–P75"
-                        ),
-                        lg=6,
-                    ),
-                ],
-                className="g-3 mt-1",
-            ),
-            dbc.Row(
-                [
-                    dbc.Col(
-                        cartao(
-                            "Duração da sessão por sítio",
-                            grafico("g-al-duracao-sitio"),
-                            subtitulo="P10 · 12 sítios com mais sessões",
-                        ),
-                        lg=6,
-                    ),
-                    dbc.Col(
-                        [
-                            cartao("Tempo médio de duração das sessões", grafico("g-al-duracao")),
-                            cartao(
-                                "Número médio de sessões por tratamento", grafico("g-al-sessoes-trat"), classe="mt-3"
-                            ),
-                        ],
-                        lg=6,
-                    ),
-                ],
-                className="g-3 mt-1",
-            ),
-        ]
-    )
 
 
 def registrar(app: Dash, ctx: AppContext) -> None:

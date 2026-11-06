@@ -2,11 +2,10 @@
 
 from __future__ import annotations
 
-import dash_bootstrap_components as dbc
 import pandas as pd
-from dash import Dash, Input, Output, dcc, html
+from dash import Dash, Input, Output
 
-from rt_dash.app.components import cartao, fmt_num, grafico, kpi
+from rt_dash.app.components import fmt_num
 from rt_dash.app.context import AppContext
 from rt_dash.metrics.monthly import (
     pacientes_que_iniciaram,
@@ -23,72 +22,6 @@ KPIS = [
     ("prod-k-planej", "Planejamentos"),
 ]
 
-
-def layout(ctx: AppContext) -> html.Div:
-    opcoes = [{"label": rotulo_mes(m), "value": m.strftime("%Y-%m")} for m in ctx.meses]
-    return html.Div(
-        [
-            html.Div(
-                className="linha-controles",
-                children=[
-                    html.Span("Mês de referência", className="rotulo-controle"),
-                    dcc.Dropdown(
-                        id="prod-mes",
-                        options=opcoes,
-                        value=opcoes[-1]["value"],
-                        clearable=False,
-                        className="dropdown-mes",
-                    ),
-                    html.Span("Valores do mês, comparados à média dos 6 meses anteriores.", className="nota"),
-                ],
-            ),
-            html.Div([kpi(i, t) for i, t in KPIS], className="linha-kpis"),
-            dbc.Row(
-                [
-                    dbc.Col(
-                        cartao(
-                            "Pacientes (sítios) que iniciaram tratamento",
-                            grafico("g-prod-inicios"),
-                            subtitulo="Pacientes distintos com 'Início do Tratamento' no mês",
-                        ),
-                        lg=6,
-                    ),
-                    dbc.Col(
-                        cartao(
-                            "Sessões de radioterapia – dia e noite",
-                            grafico("g-prod-turno"),
-                            subtitulo="Dia: até 18h45 · Noite: a partir das 19h",
-                        ),
-                        lg=6,
-                    ),
-                ],
-                className="g-3",
-            ),
-            dbc.Row(
-                [
-                    dbc.Col(
-                        cartao(
-                            "Planejamentos Eletivos, Prioridades e Urgências",
-                            grafico("g-prod-fluxo"),
-                            subtitulo="Ciclos de planejamento por mês da aprovação",
-                        ),
-                        lg=6,
-                    ),
-                    dbc.Col(
-                        cartao(
-                            "Pacientes tratados por sítio",
-                            grafico("g-prod-sitio"),
-                            subtitulo="",
-                            classe="",
-                        ),
-                        lg=6,
-                        id="col-prod-sitio",
-                    ),
-                ],
-                className="g-3 mt-1",
-            ),
-        ]
-    )
 
 
 def _comparar(serie: pd.DataFrame, mes: pd.Timestamp) -> tuple[float | None, str]:

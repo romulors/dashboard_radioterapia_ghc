@@ -16,10 +16,8 @@ body { background: var(--fundo); color: var(--texto); font-family: Inter, "Segoe
 
 /* Cabeçalho no formato das apresentações de agosto/2026 */
 .ghc-header { display: flex; align-items: stretch; margin: 0 -16px; min-height: 72px; }
-.ghc-marca { background: var(--ghc-petroleo); color: #fff; display: flex; align-items: center; gap: 10px; padding: 0 24px; }
-.ghc-logo { font-weight: 800; font-style: italic; font-size: 26px; letter-spacing: 1px; border: 2px solid #fff; border-radius: 50% / 40%; padding: 0 10px; }
-.ghc-sus { font-weight: 800; font-size: 15px; }
-.ghc-grupo { font-weight: 600; font-size: 14px; }
+.ghc-marca { background: #007E81; display: flex; align-items: center; padding: 0 20px; }
+.ghc-logo-img { height: 64px; width: auto; display: block; }
 .ghc-titulo { background: var(--ghc-agua); flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 0 24px; }
 .ghc-titulo h1 { color: #fff; font-size: 22px; font-weight: 700; margin: 0; }
 .ghc-sub { color: var(--ghc-verde); font-size: 13px; }
@@ -79,3 +77,13 @@ body { background: var(--fundo); color: var(--texto); font-family: Inter, "Segoe
 .slide-titulo { font-size: 22px; color: var(--ghc-verde); font-weight: 700; }
 
 .rodape { margin-top: 24px; font-size: 12px; color: var(--texto-2); text-align: center; }
+
+/* Seções dentro das abas */
+.secao-titulo { font-size: 17px; font-weight: 700; color: var(--ghc-verde); margin: 8px 0 2px; }
+.secao-nota { font-size: 12px; color: var(--texto-2); margin-bottom: 10px; }
+
+/* Slider do período: verde escuro do gradiente no lugar do roxo padrão do Dash */
+:root, .dash-slider-root { --Dash-Fill-Interactive-Strong: #014040; }
+.dash-slider-range { background-color: #014040 !important; }
+.dash-slider-thumb { background-color: #014040 !important; border-color: #014040 !important; }
+.dash-slider-dot:not(.dash-slider-dot-outside-selection) { border-color: #014040 !important; }

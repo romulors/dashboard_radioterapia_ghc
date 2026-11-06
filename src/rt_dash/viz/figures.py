@@ -33,7 +33,7 @@ def _ordenar_meses(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-_CORES_EXTRAS = [t.GHC_PETROLEO, t.GHC_AGUA, t.GHC_VERDE, t.NEUTRO]
+_CORES_EXTRAS = t.PALETA_CATEGORICA
 
 
 def _cor_serie(serie: str, i: int = 0) -> str:

@@ -31,11 +31,12 @@ Na primeira execução o app monta o cache sozinho; ele é refeito quando as pla
 
 | Aba | Para quê |
 | --- | --- |
-| **Produtividade** | Versão rápida para gestores: inícios de tratamento por mês (pacientes/sítios), sessões dia × noite, planejamentos Eletivo/Prioridade/Urgência e pacientes tratados por sítio no mês. |
-| **Visão Geral** | KPIs e os indicadores mensais no formato da apresentação de agosto; botão "Modo apresentação". |
-| **Atividades** | Fluxo como navegação por etapa: espera, execução, atraso e tempo acumulado por atividade, por tipo de fluxo e por mês. |
+| **Visão Geral** | Resumo executivo: KPIs do planejamento, os indicadores do formato da apresentação de agosto e pacientes por sítio; botão "Modo apresentação". |
+| **KPIs** | Indicadores-chave do mês (planejamento/tratamento e acelerador linear) e as demais séries mensais do registro. |
+| **Eficácia vs Eficiência** | Eficácia: ocupação vs meta, inícios, planejamentos e pacientes por sítio. Eficiência: esperas, duração das sessões e sessões por tratamento. |
+| **Resultado vs Tendência** | Resultado: sessões dia × noite e funil de planejamento. Tendência: evolução de ciclos por sítio, heatmap temporal e dispersão tempo × desfecho. |
+| **Processos** | Atividades do fluxo por etapa (espera, execução, atraso), heatmap de atrasos por sítio × fluxo e composição sítio → fluxo → status. |
 | **Jornada do Paciente** | Lista de pacientes, ciclos de planejamento, Gantt com esperas destacadas, cascata de tempos e comparação com a referência. Exporta CSV. |
-| **Atendimento no AL** | Ocupação do acelerador, dia × noite, espera check-in → início e duração das sessões por sítio. |
 
 Os filtros do topo (período, tipo de fluxo, sítio, ambulatorial × internado) valem para todas as abas, e cliques nos gráficos
 filtram as demais visões.

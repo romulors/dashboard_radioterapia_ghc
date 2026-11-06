@@ -9,100 +9,12 @@ import traceback
 
 import pandas as pd
 import plotly.graph_objects as go
-import dash_bootstrap_components as dbc
-from dash import Dash, Input, Output, html
+from dash import Dash, Input, Output
 
-from rt_dash.app.components import cartao, grafico
 from rt_dash.app.context import AppContext
 from rt_dash.viz import theme as t
 from rt_dash.viz.figures import vazio
 
-
-def layout(ctx: AppContext) -> html.Div:
-    return html.Div(
-        [
-            html.Div(
-                className="linha-controles",
-                children=[
-                    html.Span(
-                        "Visualizações multidimensionais interativas para análise exploratória de dados.",
-                        className="nota",
-                    ),
-                ],
-            ),
-            dbc.Row(
-                [
-                    dbc.Col(
-                        cartao(
-                            "Tempo vs. Desfecho (Scatter + Facetas)",
-                            grafico("g-am-scatter-facetas"),
-                            subtitulo="X=duração do ciclo, Y=até aprovação. Tamanho=atividades, cor=fluxo, contorno vermelho=com atraso.",
-                        ),
-                        lg=12,
-                    ),
-                ],
-                className="g-3",
-            ),
-            dbc.Row(
-                [
-                    dbc.Col(
-                        cartao(
-                            "Heatmap Temporal: Atividades por Semana",
-                            grafico("g-am-heatmap-temporal"),
-                            subtitulo="Intensidade = número de ciclos. Identifica padrões sazonais.",
-                        ),
-                        lg=6,
-                    ),
-                    dbc.Col(
-                        cartao(
-                            "Heatmap de Atrasos por Sítio e Fluxo",
-                            grafico("g-am-heatmap-atrasos"),
-                            subtitulo="% de ciclos com atraso (verde=no prazo, vermelho=atrasado).",
-                        ),
-                        lg=6,
-                    ),
-                ],
-                className="g-3",
-            ),
-            dbc.Row(
-                [
-                    dbc.Col(
-                        cartao(
-                            "Composição Hierárquica de Pacientes",
-                            grafico("g-am-sunburst"),
-                            subtitulo="Sítio → Fluxo → Status. Clique para ampliar.",
-                        ),
-                        lg=6,
-                    ),
-                    dbc.Col(
-                        cartao(
-                            "Funil de Planejamento",
-                            grafico("g-am-funnel"),
-                            subtitulo="Contagem de ciclos em cada etapa de planejamento.",
-                        ),
-                        lg=6,
-                    ),
-                ],
-                className="g-3",
-            ),
-            dbc.Row(
-                [
-                    dbc.Col(
-                        cartao(
-                            "Evolução de Indicadores por Sítio (Área)",
-                            grafico("g-am-area-indicadores"),
-                            subtitulo="% de pacientes no prazo ao longo do tempo.",
-                        ),
-                        lg=12,
-                    ),
-                ],
-                className="g-3",
-            ),
-        ]
-    )
-
-
-PALETA = t.CORES_ADOBE_PALETTE1[:1] + t.CORES_ADOBE_PALETTE4[1:] + t.CORES_ADOBE_PALETTE1[3:] + t.CORES_ADOBE_PALETTE2[3:]
 
 
 def _ciclos(ds) -> pd.DataFrame:
@@ -185,7 +97,7 @@ def _heatmap_atrasos(ds) -> go.Figure:
             y=list(tab.index),
             zmin=0,
             zmax=100,
-            colorscale=[[0, t.NO_PRAZO], [0.5, "#FFFFFF"], [1, t.ATRASADO]],
+            colorscale=t.ESCALA_DIVERGENTE,
             colorbar=dict(title="% atrasados"),
             hovertemplate="%{y} · %{x}<br>%{z:.0f}% dos ciclos com atraso<extra></extra>",
         )
@@ -207,9 +119,12 @@ def _sunburst(ds) -> go.Figure:
                 ids.append(f"{s}|{f}|{r['status']}")
                 labels.append(r["status"]); parents.append(f"{s}|{f}"); values.append(int(r["n"]))
     fig = go.Figure(go.Sunburst(ids=ids, labels=labels, parents=parents, values=values, branchvalues="total"))
-    fig.update_traces(
-        marker=dict(colors=[t.ATRASADO if l == "Atrasado" else t.NO_PRAZO if l == "No prazo" else PALETA[hash(i.split("|")[0]) % len(PALETA)] for i, l in zip(ids, labels)])
-    )
+    cor_sitio = {s: PALETA[i % len(PALETA)] for i, s in enumerate(sorted(n["sitio"].unique()))}
+    cores = [
+        t.ATRASADO if rot == "Atrasado" else t.NO_PRAZO if rot == "No prazo" else cor_sitio[i.split("|")[0]]
+        for i, rot in zip(ids, labels)
+    ]
+    fig.update_traces(marker=dict(colors=cores))
     return _layout(fig, 460)
 
 
@@ -228,7 +143,7 @@ def _funnel(ds) -> go.Figure:
             y=[e[0] for e in etapas],
             x=[e[1] for e in etapas],
             textinfo="value+percent initial",
-            marker=dict(color=PALETA[: len(etapas)]),
+            marker=dict(color=t.PALETA_GRADIENTE[::-1][:4]),
         )
     )
     return _layout(fig, 360)
