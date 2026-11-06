@@ -62,6 +62,9 @@ class Settings:
     meta_pct_no_prazo: tuple[float, float] | None = None
     meta_lead_time_dias: float | None = None
     meta_pacientes_novos: float | None = None  # por mês; meta = acima deste valor
+    vagas_tomografo_semana: float | None = None  # capacidade do tomógrafo, para a taxa de ocupação
+    meta_sessoes_mes: float | None = None  # sessões dia + noite por mês; meta = acima deste valor
+    meta_duracao_sessao_min: float | None = None  # duração média da sessão; meta = abaixo deste valor
     host: str = "127.0.0.1"
     port: int = 8050
     debug: bool = False
@@ -93,6 +96,11 @@ def load_settings(path: Path | str = DEFAULT_SETTINGS, raiz: Path | None = None)
         meta_pct_no_prazo=tuple(metas["pct_no_prazo"]) if metas.get("pct_no_prazo") else None,
         meta_lead_time_dias=float(metas["lead_time_mediana_dias"]) if metas.get("lead_time_mediana_dias") else None,
         meta_pacientes_novos=float(metas["pacientes_novos_mes"]) if metas.get("pacientes_novos_mes") else None,
+        vagas_tomografo_semana=float(cfg["tomografo"]["vagas_por_semana"])
+        if cfg.get("tomografo", {}).get("vagas_por_semana")
+        else None,
+        meta_sessoes_mes=float(metas["sessoes_mes"]) if metas.get("sessoes_mes") else None,
+        meta_duracao_sessao_min=float(metas["duracao_sessao_min"]) if metas.get("duracao_sessao_min") else None,
         host=app.get("host", "127.0.0.1"),
         port=int(app.get("port", 8050)),
         debug=bool(app.get("debug", False)),

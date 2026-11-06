@@ -29,7 +29,28 @@ KPIS = [
 
 
 def _metas(ctx: AppContext) -> dict[str, tuple[float, float]]:
-    return {"ocupacao_acelerador": ctx.settings.meta_ocupacao_acelerador}
+    return {
+        "ocupacao_acelerador": ctx.settings.meta_ocupacao_acelerador,
+        "ocupacao_tomografo": ctx.settings.meta_ocupacao_tomografo,
+    }
+
+
+def _linhas_meta(ctx: AppContext) -> dict[str, tuple[float, str]]:
+    """Metas de limite único desenhadas como linha: id do indicador → (valor, rótulo)."""
+    st = ctx.settings
+    linhas: dict[str, tuple[float, str]] = {}
+    if st.meta_pacientes_novos:
+        for i in ("inicios", "pacientes_iniciaram"):
+            linhas[i] = (st.meta_pacientes_novos, f"Meta: acima de {st.meta_pacientes_novos:g}")
+    if st.meta_pct_no_prazo:
+        linhas["no_prazo"] = (st.meta_pct_no_prazo[0], f"Meta: acima de {st.meta_pct_no_prazo[0]:.0%}")
+    if st.meta_sessoes_mes:
+        linhas["sessoes_turno"] = (st.meta_sessoes_mes, f"Meta: total acima de {st.meta_sessoes_mes:g}")
+    if st.meta_duracao_sessao_min:
+        linhas["duracao_sessao"] = (st.meta_duracao_sessao_min, f"Meta: abaixo de {st.meta_duracao_sessao_min:g} min")
+    if st.meta_lead_time_dias:
+        linhas["lead_time"] = (st.meta_lead_time_dias, f"Meta: abaixo de {st.meta_lead_time_dias:g} dias")
+    return linhas
 
 
 def registrar(app: Dash, ctx: AppContext) -> None:
@@ -64,13 +85,15 @@ def registrar(app: Dash, ctx: AppContext) -> None:
             f"{fmt_pct((sess['turno'] == 'Noite').mean())} à noite",
         ]
         metas = _metas(ctx)
+        linhas = _linhas_meta(ctx)
         figuras = [
             fig.serie_mensal(
                 REGISTRO[i].calcular(ds, ctx.settings),
                 formato=REGISTRO[i].formato,
                 tipo=REGISTRO[i].grafico,
                 meta=metas.get(i),
-                meta_minima=ctx.settings.meta_pacientes_novos if i == "inicios" else None,
+                meta_minima=linhas.get(i, (None, None))[0],
+                meta_rotulo=linhas.get(i, (None, None))[1],
                 mes_selecionado=mes,
                 altura=280,
             )

@@ -12,6 +12,7 @@ import plotly.graph_objects as go
 
 from rt_dash.metrics.fluxo import DIAS_SEMANA
 from rt_dash.viz import theme as t
+from rt_dash.viz.alternativas import com_alternativas
 from rt_dash.viz.figures import vazio
 
 
@@ -25,6 +26,21 @@ def _layout(fig: go.Figure, altura: int, **kw) -> go.Figure:
 
 
 # ---------------------------------------------------------------- KPIs
+def _faixa_meta(meta, polaridade: str, maximo: float, fator: float):
+    """(início, fim, limite) da faixa da meta na escala do gráfico, ou None sem meta."""
+    if meta is None:
+        return None
+    lo, hi = meta if isinstance(meta, tuple | list) else (meta, meta)
+    if polaridade in ("maior", "acima"):
+        a, b = lo * fator, maximo * fator
+    elif polaridade in ("menor", "abaixo"):
+        a, b = 0, hi * fator
+    else:
+        a, b = lo * fator, hi * fator
+    limite = (hi if polaridade in ("menor", "abaixo") else lo) * fator
+    return a, b, limite
+
+
 def bullet(
     valor: float | None,
     meta: tuple[float, float] | float | None,
@@ -34,7 +50,92 @@ def bullet(
     polaridade: str = "faixa",
     altura: int = 110,
 ) -> go.Figure:
-    """Bullet graph: barra do valor, faixa da meta em cinza e traço no limite da meta."""
+    """Bullet graph interativo (catálogo K1): barra do valor sobre a faixa da meta, com dica.
+
+    Alternativas no ⇄: o mesmo bullet como indicador do Plotly (K1, sem dica) e o velocímetro (K2).
+    """
+    if valor is None or valor != valor:
+        return vazio("Sem dado no mês")
+    fator = 100 if percentual else 1
+    suf = "%" if percentual else ""
+    faixa = _faixa_meta(meta, polaridade, maximo, fator)
+    fig = go.Figure()
+    meta_txt = ""
+    if faixa:
+        a, b, limite = faixa
+        fig.add_shape(type="rect", x0=a, x1=b, y0=-0.42, y1=0.42, fillcolor="#D9DDE1", line_width=0, layer="below")
+        fig.add_shape(type="line", x0=limite, x1=limite, y0=-0.48, y1=0.48, line=dict(color=t.TEXTO, width=3))
+        meta_txt = f"<br>Meta: {_br(a)}{suf} a {_br(b)}{suf}"
+    fig.add_trace(
+        go.Bar(
+            x=[valor * fator],
+            y=[titulo],
+            orientation="h",
+            width=0.38,
+            marker_color=t.GHC_VERDE,
+            name=titulo,
+            text=[f"{_br(valor * fator, 0 if percentual else 1)}{suf}"],
+            textposition="outside",
+            hovertemplate=f"{titulo}: %{{x:.1f}}{suf}{meta_txt}<extra></extra>",
+        )
+    )
+    fig.update_xaxes(range=[0, maximo * fator * 1.08], ticksuffix=suf, showgrid=True, gridcolor=t.GRADE)
+    fig.update_yaxes(automargin=True)
+    _layout(fig, altura, margin=dict(l=8, r=24, t=8, b=24), showlegend=False)
+    return com_alternativas(
+        fig,
+        "Bullet (barra com dica)",
+        [
+            ("Bullet (indicador)", _bullet_indicador(valor, meta, titulo, maximo, percentual, polaridade, altura)),
+            ("Velocímetro", velocimetro(valor, meta, titulo, maximo, percentual, polaridade, altura)),
+        ],
+    )
+
+
+def velocimetro(
+    valor: float,
+    meta,
+    titulo: str,
+    maximo: float,
+    percentual: bool = True,
+    polaridade: str = "faixa",
+    altura: int = 110,
+) -> go.Figure:
+    """Gauge (catálogo K2): ponteiro sobre a faixa da meta. Ocupa mais espaço; bom para apresentação."""
+    fator = 100 if percentual else 1
+    faixa = _faixa_meta(meta, polaridade, maximo, fator)
+    gauge = dict(
+        axis=dict(range=[0, maximo * fator], ticksuffix="%" if percentual else ""),
+        bar=dict(color=t.GHC_VERDE, thickness=0.3),
+        steps=[dict(range=[faixa[0], faixa[1]], color="#D9DDE1")] if faixa else [],
+        bgcolor="#F1F3F4",
+    )
+    if faixa:
+        gauge["threshold"] = dict(line=dict(color=t.TEXTO, width=3), thickness=0.9, value=faixa[2])
+    fig = go.Figure(
+        go.Indicator(
+            mode="number+gauge",
+            value=valor * fator,
+            number=dict(
+                suffix="%" if percentual else "", valueformat=".0f" if percentual else ".1f", font=dict(size=18)
+            ),
+            title=dict(text=titulo, font=dict(size=12)),
+            gauge=gauge,
+        )
+    )
+    return _layout(fig, altura, margin=dict(l=16, r=16, t=24, b=4))
+
+
+def _bullet_indicador(
+    valor: float | None,
+    meta: tuple[float, float] | float | None,
+    titulo: str,
+    maximo: float,
+    percentual: bool = True,
+    polaridade: str = "faixa",
+    altura: int = 110,
+) -> go.Figure:
+    """Bullet graph do Plotly (`go.Indicator`): barra do valor, faixa da meta em cinza e traço no limite."""
     if valor is None or valor != valor:
         return vazio("Sem dado no mês")
     fator = 100 if percentual else 1
@@ -43,7 +144,7 @@ def bullet(
     if lo is not None:
         if polaridade == "maior":
             passos = [dict(range=[lo * fator, maximo * fator], color="#D9DDE1")]
-        elif polaridade == "menor":
+        elif polaridade in ("menor", "abaixo"):
             passos = [dict(range=[0, hi * fator], color="#D9DDE1")]
         else:
             passos = [dict(range=[lo * fator, hi * fator], color="#D9DDE1")]
@@ -57,7 +158,7 @@ def bullet(
         bordercolor=t.TEXTO_SECUNDARIO,
     )
     if lo is not None:
-        limite = lo if polaridade != "menor" else hi
+        limite = hi if polaridade in ("menor", "abaixo") else lo
         gauge["threshold"] = dict(line=dict(color=t.TEXTO, width=3), thickness=0.9, value=limite * fator)
     fig = go.Figure(
         go.Indicator(
@@ -105,9 +206,69 @@ def sparkline(df: pd.DataFrame, altura: int = 60) -> go.Figure:
 
 
 def win_loss(dentro: pd.DataFrame, altura: int = 150) -> go.Figure:
-    """Win/Loss: uma linha por indicador e um traço por mês, para cima (dentro da meta) ou para baixo (fora)."""
+    """Meses dentro da meta por indicador (catálogo S5). Padrão: grade sim/não com dica e zoom (L7);
+    alternativas: Win/Loss com triângulos (S5) e contagem de meses na meta em barras empilhadas (P3)."""
     if dentro.empty:
         return vazio("Nenhum indicador com meta definida")
+    d = dentro.sort_values("mes")
+    meses = list(dict.fromkeys(d["mes"]))
+    inds = list(dict.fromkeys(d["indicador"]))
+    tab = d.pivot_table(index="indicador", columns="mes", values="dentro", aggfunc="last").reindex(
+        index=inds, columns=meses
+    )
+    z = tab.astype(float).to_numpy()
+    texto = [["" if v != v else ("✓" if v else "✕") for v in linha] for linha in z]
+    grade = go.Figure(
+        go.Heatmap(
+            z=z,
+            x=[t.rotulo_mes(m) for m in meses],
+            y=inds,
+            text=texto,
+            texttemplate="%{text}",
+            colorscale=[[0, t.ATRASADO], [0.5, t.ATRASADO], [0.5, t.NO_PRAZO], [1, t.NO_PRAZO]],
+            zmin=0,
+            zmax=1,
+            showscale=False,
+            xgap=3,
+            ygap=3,
+            customdata=[["" if v != v else ("dentro da meta" if v else "fora da meta") for v in linha] for linha in z],
+            hovertemplate="%{y} · %{x}: %{customdata}<extra></extra>",
+        )
+    )
+    grade.update_xaxes(type="category", showgrid=False)
+    grade.update_yaxes(automargin=True, autorange="reversed")
+    _layout(grade, altura, showlegend=False)
+    cont = d.groupby("indicador", sort=False)["dentro"].agg(dentro="sum", total="count").reindex(inds)
+    barras = go.Figure(
+        [
+            go.Bar(
+                y=inds,
+                x=cont["dentro"],
+                orientation="h",
+                name="Dentro da meta",
+                marker_color=t.NO_PRAZO,
+                hovertemplate="%{y}: %{x} meses dentro<extra></extra>",
+            ),
+            go.Bar(
+                y=inds,
+                x=cont["total"] - cont["dentro"],
+                orientation="h",
+                name="Fora da meta",
+                marker_color=t.ATRASADO,
+                marker_pattern_shape="/",
+                hovertemplate="%{y}: %{x} meses fora<extra></extra>",
+            ),
+        ]
+    )
+    barras.update_xaxes(title_text="meses")
+    barras.update_yaxes(automargin=True, autorange="reversed")
+    _layout(barras, altura, barmode="stack")
+    return com_alternativas(
+        grade, "Grade sim/não", [("Win/Loss", _win_loss_triangulos(d, altura)), ("Meses na meta", barras)]
+    )
+
+
+def _win_loss_triangulos(dentro: pd.DataFrame, altura: int) -> go.Figure:
     fig = go.Figure()
     for indicador, g in dentro.groupby("indicador", sort=False):
         g = g.sort_values("mes")
@@ -309,9 +470,44 @@ def idade_abertos(df: pd.DataFrame, referencia_p90: float | None, altura: int = 
 
 # ---------------------------------------------------------------- Eficácia / Eficiência
 def waffle(comp: pd.DataFrame, altura: int = 300) -> go.Figure:
-    """Waffle 10×10: cada quadrado = 1% dos planejamentos; legenda com o percentual escrito."""
+    """Composição dos planejamentos por fluxo. Padrão: barra 100% empilhada (P4, dica e legenda clicável);
+    alternativas: waffle 10×10 (P8) e rosca (P2)."""
     if comp.empty:
         return vazio()
+    barra = go.Figure(
+        [
+            go.Bar(
+                x=[p * 100],
+                y=["Planejamentos"],
+                orientation="h",
+                name=f"{f}: {_br(p * 100)}%",
+                marker_color=t.CORES_FLUXO.get(f, t.PALETA_CATEGORICA[i % len(t.PALETA_CATEGORICA)]),
+                text=[f"{_br(p * 100)}%"],
+                textposition="inside",
+                hovertemplate=f"{f}: {_br(p * 100)}% · {n} ciclos<extra></extra>",
+            )
+            for i, (f, p, n) in enumerate(zip(comp["tipo_fluxo"], comp["pct"], comp["n"], strict=True))
+        ]
+    )
+    barra.update_xaxes(range=[0, 100], ticksuffix="%")
+    barra.update_yaxes(visible=False)
+    _layout(barra, altura, barmode="stack", legend=dict(orientation="h", y=-0.15, x=0))
+    rosca = go.Figure(
+        go.Pie(
+            labels=comp["tipo_fluxo"],
+            values=comp["n"],
+            hole=0.55,
+            sort=False,
+            marker=dict(colors=[t.CORES_FLUXO.get(f, t.NEUTRO) for f in comp["tipo_fluxo"]]),
+            textinfo="percent",
+            hovertemplate="%{label}: %{value} ciclos (%{percent})<extra></extra>",
+        )
+    )
+    _layout(rosca, altura, margin=dict(l=8, r=8, t=8, b=8))
+    return com_alternativas(barra, "Barra 100%", [("Waffle", _waffle_grade(comp, altura)), ("Rosca", rosca)])
+
+
+def _waffle_grade(comp: pd.DataFrame, altura: int) -> go.Figure:
     quadros = np.round(comp["pct"].to_numpy() * 100).astype(int)
     quadros[np.argmax(quadros)] += 100 - quadros.sum()
     fig = go.Figure()

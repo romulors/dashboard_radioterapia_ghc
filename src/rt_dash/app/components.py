@@ -227,7 +227,9 @@ def kpi(id_: str, titulo: str) -> html.Div:
 
 
 # Gráficos cuja forma não admite outra renderização dos mesmos dados (mostram 1/1).
-SEM_ALTERNATIVAS = {"g-nv-waffle", "g-sc-winloss", "g-jo-gantt", "g-jo-cascata", "g-sc-ocupacao", "g-sc-prazo"}
+# Todos os gráficos têm ao menos duas visualizações (pedido do autor, 06/11): as automáticas de `assets/a11y.js`
+# ou as montadas no servidor (`viz/alternativas.py`). Deixe aqui só um id que precise de exceção.
+SEM_ALTERNATIVAS: set[str] = set()
 
 
 def _icone(nome: str) -> html.Span:
@@ -347,7 +349,9 @@ def grafico(id_: str, altura: int | None = None, descricao: str = "", alternativ
                     config={
                         "displaylogo": False,
                         "locale": "pt-BR",
-                        "modeBarButtonsToRemove": ["lasso2d", "select2d", "autoScale2d"],
+                        # Seleção por caixa e laço ficam (só aparecem em gráficos de pontos); o Plotly as esconde
+                        # nos demais tipos.
+                        "modeBarButtonsToRemove": ["autoScale2d"],
                         "toImageButtonOptions": {"format": "png", "scale": 2},
                     },
                 ),

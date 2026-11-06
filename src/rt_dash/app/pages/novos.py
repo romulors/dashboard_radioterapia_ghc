@@ -13,7 +13,14 @@ from dash import Dash, Input, Output, dcc, html
 from rt_dash.app.components import fmt_num, fmt_pct, status_badge
 from rt_dash.app.context import AppContext
 from rt_dash.metrics import fluxo as fx
-from rt_dash.metrics.monthly import ocupacao_acelerador, pacientes_que_iniciaram, pct_no_prazo, sessoes_por_turno
+from rt_dash.metrics.monthly import (
+    duracao_media_sessao,
+    ocupacao_acelerador,
+    ocupacao_tomografo,
+    pacientes_que_iniciaram,
+    pct_no_prazo,
+    sessoes_por_turno,
+)
 from rt_dash.viz import novos as nv
 from rt_dash.viz.figures import vazio
 
@@ -50,14 +57,16 @@ def _valor_no_mes(serie: pd.DataFrame, mes: pd.Timestamp) -> float | None:
 def _texto_meta(meta, polaridade: str, pct: bool) -> str:
     if meta is None:
         return "Sem meta definida"
-    fmt = (lambda v: fmt_pct(v)) if pct else (lambda v: fmt_num(v, 1))
+    fmt = (lambda v: fmt_pct(v)) if pct else (lambda v: fmt_num(v, 0 if float(v).is_integer() else 1))
     lo, hi = meta if isinstance(meta, tuple | list) else (meta, meta)
     if polaridade == "maior":
         return f"≥ {fmt(lo)}"
     if polaridade == "acima":
-        return f"acima de {fmt_num(lo)}"
+        return f"acima de {fmt(lo)}"
     if polaridade == "menor":
         return f"≤ {fmt(hi)}"
+    if polaridade == "abaixo":
+        return f"abaixo de {fmt(hi)}"
     return f"{fmt(lo)} a {fmt(hi)}"
 
 
@@ -97,20 +106,26 @@ def registrar(app: Dash, ctx: AppContext) -> None:
         st = ctx.settings
         mes = pd.Timestamp(mes_ref)
         ocup = ocupacao_acelerador(ds, st)
+        ocup_tc = ocupacao_tomografo(ds, st)
         prazo = pct_no_prazo(ds, st)
         lead = fx.mediana_mensal(ds.ciclos)
         inicios = pacientes_que_iniciaram(ds, st)
+        sessoes = sessoes_por_turno(ds, st)
+        duracao = duracao_media_sessao(ds, st)
         linhas_def = [
             ("Ocupação do acelerador linear", ocup, st.meta_ocupacao_acelerador, "faixa", True),
-            ("Tarefas de planejamento no prazo", prazo, st.meta_pct_no_prazo, "maior", True),
-            ("Mediana da duração do ciclo (dias)", lead, st.meta_lead_time_dias, "menor", False),
+            ("Ocupação do tomógrafo", ocup_tc, st.meta_ocupacao_tomografo, "faixa", True),
+            ("Tarefas de planejamento no prazo", prazo, st.meta_pct_no_prazo, "acima", True),
+            ("Mediana da duração do ciclo (dias)", lead, st.meta_lead_time_dias, "abaixo", False),
             ("Pacientes novos (iniciaram tratamento)", inicios, st.meta_pacientes_novos, "acima", False),
+            ("Sessões de radioterapia (dia e noite)", sessoes, st.meta_sessoes_mes, "acima", False),
+            ("Tempo médio de duração das sessões (min)", duracao, st.meta_duracao_sessao_min, "abaixo", False),
         ]
         corpo = []
         for nome, serie, meta, pol, pct in linhas_def:
             valor = _valor_no_mes(serie, mes)
             codigo, texto = fx.status_meta(valor, meta, pol) if pol != "neutra" else ("sem_meta", "Volume, sem meta")
-            valor_txt = fmt_pct(valor) if pct else fmt_num(valor, 1 if "dias" in nome else 0)
+            valor_txt = fmt_pct(valor) if pct else fmt_num(valor, 1 if "dias" in nome or "min" in nome else 0)
             spark = dcc.Graph(
                 figure=nv.sparkline(serie),
                 config={"staticPlot": True, "displayModeBar": False},
@@ -146,16 +161,19 @@ def registrar(app: Dash, ctx: AppContext) -> None:
         wl = fx.dentro_da_meta_mensal(
             {
                 "Ocupação AL": (ocup, st.meta_ocupacao_acelerador, "faixa"),
-                "No prazo": (prazo, st.meta_pct_no_prazo, "maior"),
-                "Mediana do ciclo": (lead, st.meta_lead_time_dias, "menor"),
+                "Ocupação TC": (ocup_tc, st.meta_ocupacao_tomografo, "faixa"),
+                "No prazo": (prazo, st.meta_pct_no_prazo, "acima"),
+                "Mediana do ciclo": (lead, st.meta_lead_time_dias, "abaixo"),
                 "Pacientes novos": (inicios, st.meta_pacientes_novos, "acima"),
+                "Sessões": (sessoes, st.meta_sessoes_mes, "acima"),
+                "Duração da sessão": (duracao, st.meta_duracao_sessao_min, "abaixo"),
             }
         )
         return (
             tabela,
             _seguro(nv.bullet, _valor_no_mes(ocup, mes), st.meta_ocupacao_acelerador, "Ocupação do AL", 1.0),
             _seguro(
-                nv.bullet, _valor_no_mes(prazo, mes), st.meta_pct_no_prazo, "Tarefas no prazo", 1.0, polaridade="maior"
+                nv.bullet, _valor_no_mes(prazo, mes), st.meta_pct_no_prazo, "Tarefas no prazo", 1.0, polaridade="acima"
             ),
             _seguro(nv.win_loss, wl),
         )

@@ -89,11 +89,17 @@ Cabeçalho de cada gráfico (ordem pedida pelo autor): ⓘ · título e subtítu
 Ícones do Material Symbols (info_i, sync_alt, open_in_full, close_fullscreen) em `assets/icones/` como máscara CSS.
 ⓘ mostra cálculo (`app/ajuda.py`, `CALCULO`; séries `g-vg-*`/`g-ap-*` usam a `descricao` do registro), meta e
 tolerância (`METAS_GRAFICO`; tolerância = `TOLERANCIA_*` de `metrics/fluxo.py`, a mesma de `status_meta`).
-⇄ troca a renderização no navegador (`assets/a11y.js`, `classificar`): linhas/barras/área/pontos, barras/pontos/
-colunas, histograma/caixa/violino/acumulada, mapa de calor/bolhas/linhas, dispersão/densidade/contornos. Figura nova
-do servidor volta à visualização 1. Sem alternativa: `SEM_ALTERNATIVAS` em `app/components.py`.
+⇄ troca a renderização no navegador (`assets/a11y.js`, `classificar`): linhas/barras/área/pontos/degraus, barras/
+pirulito/pontos/colunas, histograma/caixa/violino/acumulada, caixa/violino/caixa com pontos, mapa de calor/bolhas/
+linhas, dispersão/densidade/contornos. Onde a conversão automática não serve (bullet, win/loss, waffle, Gantt,
+cascata, funil, comparação da Jornada), a figura leva alternativas prontas do servidor: `com_alternativas()` de
+`viz/alternativas.py` grava em `layout.meta` (`rt_nome`, `rt_alternativas`, `rt_auto=False` desliga as automáticas).
+Regra (docs do catálogo, seção 4.5): a visualização 1 é a de maior interatividade e todo gráfico tem ≥ 3 opções.
+Figura nova do servidor volta à visualização 1. `SEM_ALTERNATIVAS` (`app/components.py`) está vazio; as sparklines
+estáticas da tabela de KPIs não têm ⇄.
 Expandir: o cartão vira sobreposição na largura da tela (Esc, fundo ou o botão recolhem).
-Metas ainda não definidas ficam `null` em `config/settings.yaml` (`pct_no_prazo`, `lead_time_mediana_dias`).
+Metas em `config/settings.yaml`: tarefas no prazo ≥ 90% (`pct_no_prazo`, polaridade "maior") e mediana do ciclo
+abaixo de 10 dias (`lead_time_mediana_dias`, polaridade "abaixo", estrita), definidas pelo Romulo em 06/11.
 Proposta que originou esta versão: https://claude.ai/artifact/TySDdDuP9ec9phWBxk7VZs
 
 ## Acessibilidade (WCAG 2.2 AA / EN 301 549)

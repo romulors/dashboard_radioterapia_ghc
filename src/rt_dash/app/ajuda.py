@@ -108,16 +108,24 @@ _settings = None
 
 # Gráfico → (campo da meta em Settings, polaridade, formato). A meta vem de config/settings.yaml.
 _OCUPACAO = ("meta_ocupacao_acelerador", "faixa", "pct")
-_PRAZO = ("meta_pct_no_prazo", "maior", "pct")
-_LEAD = ("meta_lead_time_dias", "menor", "dias")
+_TOMOGRAFO = ("meta_ocupacao_tomografo", "faixa", "pct")
+_PRAZO = ("meta_pct_no_prazo", "acima", "pct")
+_LEAD = ("meta_lead_time_dias", "abaixo", "dias")
 _NOVOS = ("meta_pacientes_novos", "acima", "num")
+_SESSOES = ("meta_sessoes_mes", "acima", "num")
+_DURACAO = ("meta_duracao_sessao_min", "abaixo", "min")
 METAS_GRAFICO = {
     "g-al-ocupacao": _OCUPACAO,
     "g-sc-ocupacao": _OCUPACAO,
     "g-vg-ocupacao_acelerador": _OCUPACAO,
+    "g-vg-ocupacao_tomografo": _TOMOGRAFO,
     "g-ap-ocupacao_acelerador": _OCUPACAO,
     "g-sc-prazo": _PRAZO,
     "g-vg-no_prazo": _PRAZO,
+    "g-vg-lead_time": _LEAD,
+    "g-vg-sessoes_turno": _SESSOES,
+    "g-vg-duracao_sessao": _DURACAO,
+    "g-vg-pacientes_iniciaram": _NOVOS,
     "g-ap-no_prazo": _PRAZO,
     "g-nv-controle": _LEAD,
     "g-nv-ridgeline": _LEAD,
@@ -140,6 +148,8 @@ def _fmt(v: float, formato: str) -> str:
     texto = f"{n:.2f}".rstrip("0").rstrip(".").replace(".", ",")
     if formato == "num":
         return f"{v:.0f}" if float(v).is_integer() else texto
+    if formato == "min":
+        return f"{texto} min"
     return f"{texto}%" if formato == "pct" else f"{texto} dias"
 
 
@@ -147,7 +157,8 @@ def meta_e_tolerancia(id_: str) -> tuple[str, str] | None:
     """(meta, tolerância) do gráfico em texto; None quando o indicador não tem meta."""
     if id_ == "g-sc-winloss":
         return (
-            "a de cada indicador (ocupação 80–85%; pacientes novos, prazo e duração do ciclo quando definidos).",
+            "a de cada indicador (ocupação do AL, tarefas no prazo, duração do ciclo, pacientes novos, sessões e "
+            "duração da sessão), definida em config/settings.yaml e listada na aba Sobre.",
             "",
         )
     if id_ not in METAS_GRAFICO:
@@ -174,6 +185,12 @@ def meta_e_tolerancia(id_: str) -> tuple[str, str] | None:
         tol = (
             f"até {TOLERANCIA_LIMITE:.0%} abaixo (a partir de {_fmt(lo * (1 - TOLERANCIA_LIMITE), formato)}) conta "
             "como “atenção”; abaixo disso, “fora da meta”."
+        )
+    elif polaridade == "abaixo":
+        alvo = f"abaixo de {_fmt(hi, formato)}" + (" (mediana)" if formato == "dias" else " (média do mês)")
+        tol = (
+            f"de {_fmt(hi, formato)} até {TOLERANCIA_LIMITE:.0%} acima ({_fmt(hi * (1 + TOLERANCIA_LIMITE), formato)}) "
+            "conta como “atenção”; acima disso, “fora da meta”."
         )
     else:
         alvo = f"{_fmt(hi, formato)} ou menos (mediana)"

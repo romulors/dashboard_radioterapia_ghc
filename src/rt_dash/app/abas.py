@@ -72,6 +72,22 @@ def _cartao_registro(id_: str) -> dbc.Col:
     return dbc.Col(cartao(ind.titulo, grafico(f"g-vg-{id_}"), subtitulo=sub), lg=6, xxl=4)
 
 
+# Histórico mensal de cada cartão de KPI (pedido do Romulo, 06/11): cartão → indicador do registro.
+# Cada indicador aparece uma única vez; as sessões (três cartões com a mesma contagem) usam um só gráfico.
+HISTORICO_KPIS = {
+    "produtividade": ["pacientes_iniciaram", "sessoes_turno", "sessoes_noite", "planejamentos_fluxo"],
+    "planejamento": ["pacientes_planejamento", "planejamentos", "lead_time", "no_prazo", "ate_tratamento"],
+    "acelerador": ["ocupacao_acelerador", "duracao_sessao", "espera_checkin", "pacientes_atendidos"],
+}
+
+
+def _historicos(chave: str, nota: str | None = None) -> html.Div:
+    filhos = [dbc.Row([_cartao_registro(i) for i in HISTORICO_KPIS[chave]], className="g-3 mt-1")]
+    if nota:
+        filhos.append(html.P(nota, className="nota mt-2"))
+    return html.Div(filhos)
+
+
 def _ir(aba: str, rotulo: str, origem: str) -> html.Button:
     return html.Button(rotulo, id={"type": "ir-aba", "aba": aba, "origem": origem}, className="link-aba", n_clicks=0)
 
@@ -248,7 +264,9 @@ def visao_geral_aba(ctx: AppContext) -> html.Div:
 # ---------------------------------------------------------------- KPIs
 def kpis_aba(ctx: AppContext) -> html.Div:
     opcoes = [{"label": rotulo_mes(m), "value": m.strftime("%Y-%m")} for m in ctx.meses]
-    ordem = visao_geral.APRESENTACAO + [i for i in REGISTRO if i not in visao_geral.APRESENTACAO]
+    nos_kpis = {i for ids in HISTORICO_KPIS.values() for i in ids}
+    ordem = [i for i in visao_geral.APRESENTACAO + list(REGISTRO) if i not in nos_kpis]
+    ordem = list(dict.fromkeys(ordem))
     modal = dbc.Modal(
         [
             dbc.ModalHeader(dbc.ModalTitle("Indicadores Radioterapia · formato de apresentação")),
@@ -308,7 +326,7 @@ def kpis_aba(ctx: AppContext) -> html.Div:
                 html.Div(
                     cartao(
                         "Meses dentro (▲ ✓) e fora (▼ ✕) da meta",
-                        grafico("g-sc-winloss", altura=170),
+                        grafico("g-sc-winloss", altura=210),
                         subtitulo="Um símbolo por mês para cada indicador com meta",
                     ),
                     className="mt-3",
@@ -318,19 +336,26 @@ def kpis_aba(ctx: AppContext) -> html.Div:
                 "Planejamento e tratamento",
                 "Indicadores do mês de referência, com a variação contra a média dos 6 meses anteriores.",
                 html.Div([kpi(i, t) for i, t in produtividade.KPIS], className="linha-kpis"),
+                _historicos("produtividade", "Sessões: total do mês = barras de dia e noite empilhadas."),
             ),
             _secao(
                 "Planejamento no período filtrado",
                 "Volumes e tempos do período escolhido na barra de filtros.",
                 html.Div([kpi(i, t) for i, t in visao_geral.KPIS], className="linha-kpis"),
+                _historicos(
+                    "planejamento",
+                    "Ciclos de planejamento = gráfico “Número de planejamentos” (mesma contagem). "
+                    "Sessões no AL: histórico no gráfico de sessões dia e noite, acima.",
+                ),
             ),
             _secao(
                 "Acelerador linear",
                 "Indicadores do atendimento no período filtrado.",
                 html.Div([kpi(i, t) for i, t in atendimento.KPIS], className="linha-kpis"),
+                _historicos("acelerador", "Sessões: histórico no gráfico de sessões dia e noite, acima."),
             ),
             _secao(
-                "Séries mensais",
+                "Outras séries mensais",
                 "Clique num mês (ou escolha em “Mês em destaque”) para filtrar as outras abas.",
                 dbc.Row([_cartao_registro(i) for i in ordem], className="g-3"),
             ),
@@ -615,11 +640,33 @@ def sobre_aba(ctx: AppContext) -> html.Div:
         ),
         (
             "Tarefas no prazo",
-            ("ok", f"{pct(st.meta_pct_no_prazo[0])} ou mais") if st.meta_pct_no_prazo else ("sem", "sem meta definida"),
+            ("ok", f"acima de {pct(st.meta_pct_no_prazo[0])}")
+            if st.meta_pct_no_prazo
+            else ("sem", "sem meta definida"),
         ),
         (
             "Duração do ciclo (mediana)",
-            ("ok", f"até {st.meta_lead_time_dias:g} dias") if st.meta_lead_time_dias else ("sem", "sem meta definida"),
+            ("ok", f"abaixo de {st.meta_lead_time_dias:g} dias")
+            if st.meta_lead_time_dias
+            else ("sem", "sem meta definida"),
+        ),
+        (
+            "Sessões por mês (dia + noite)",
+            ("ok", f"acima de {st.meta_sessoes_mes:g}") if st.meta_sessoes_mes else ("sem", "sem meta definida"),
+        ),
+        (
+            "Duração média da sessão",
+            ("ok", f"abaixo de {st.meta_duracao_sessao_min:g} min")
+            if st.meta_duracao_sessao_min
+            else ("sem", "sem meta definida"),
+        ),
+        (
+            "Ocupação do tomógrafo",
+            (
+                "ok",
+                f"{pct(st.meta_ocupacao_tomografo[0])} a {pct(st.meta_ocupacao_tomografo[1])} "
+                f"({st.vagas_tomografo_semana or 0:g} vagas por semana)",
+            ),
         ),
     ]
     qualidade = [

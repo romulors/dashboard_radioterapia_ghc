@@ -188,15 +188,16 @@ def status_meta(valor: float | None, meta: tuple[float, float] | float | None, p
     """Status de um valor frente à meta: (código, texto). Código: ok | atencao | fora | sem_meta.
 
     `meta` pode ser uma faixa (mín, máx) ou um limite único. Polaridade "maior" = quanto maior melhor (≥ meta),
-    "acima" = estritamente acima da meta, "menor" = quanto menor melhor, "faixa" = deve ficar dentro da faixa.
+    "acima" = estritamente acima da meta, "menor" = quanto menor melhor (≤ meta), "abaixo" = estritamente abaixo da
+    meta, "faixa" = deve ficar dentro da faixa.
     """
     if valor is None or valor != valor:
         return "sem_meta", "Sem dado"
     if meta is None:
         return "sem_meta", "Sem meta definida"
     lo, hi = meta if isinstance(meta, tuple | list) else (meta, meta)
-    if polaridade == "menor":
-        if valor <= hi:
+    if polaridade in ("menor", "abaixo"):
+        if valor < hi or (polaridade == "menor" and valor == hi):
             return "ok", "Dentro da meta"
         perto = valor <= hi * (1 + TOLERANCIA_LIMITE)
         return ("atencao", "Pouco acima da meta") if perto else ("fora", "Acima da meta")

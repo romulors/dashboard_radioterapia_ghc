@@ -14,6 +14,7 @@ from dash import Dash, Input, Output
 from rt_dash.app.context import AppContext
 from rt_dash.metrics.fluxo import ciclos_com_sitio
 from rt_dash.viz import theme as t
+from rt_dash.viz.alternativas import com_alternativas
 from rt_dash.viz.figures import vazio
 
 
@@ -72,15 +73,56 @@ def _funnel(ds) -> go.Figure:
         ("Plano aprovado", int(c["aprovacao"].notna().sum())),
         ("Tratamento iniciado", int(c["inicio_tratamento"].notna().sum())),
     ]
+    nomes = [e[0] for e in etapas]
+    valores = [e[1] for e in etapas]
+    cores = t.PALETA_GRADIENTE[::-1][:4]
     fig = go.Figure(
         go.Funnel(
-            y=[e[0] for e in etapas],
-            x=[e[1] for e in etapas],
+            y=nomes,
+            x=valores,
             textinfo="value+percent initial",
-            marker=dict(color=t.PALETA_GRADIENTE[::-1][:4]),
+            marker=dict(color=cores),
+            hovertemplate=(
+                "%{y}: %{x} ciclos<br>%{percentInitial:.0%} do início"
+                " · %{percentPrevious:.0%} da etapa anterior<extra></extra>"
+            ),
         )
     )
-    return _layout(fig, 360)
+    # Alternativas do catálogo: barras com a conversão escrita (M1) e cascata de perdas entre etapas (V8).
+    base = valores[0] or 1
+    barras = go.Figure(
+        go.Bar(
+            y=nomes,
+            x=valores,
+            orientation="h",
+            marker_color=cores,
+            text=[f"{v} ({v / base:.0%})".replace(".", ",") for v in valores],
+            textposition="outside",
+            hovertemplate="%{y}: %{x} ciclos<extra></extra>",
+        )
+    )
+    barras.update_yaxes(autorange="reversed", automargin=True)
+    barras.update_xaxes(title_text="ciclos")
+    perdas = [valores[0]] + [valores[i] - valores[i - 1] for i in range(1, len(valores))]
+    cascata = go.Figure(
+        go.Waterfall(
+            x=["Ciclos iniciados"] + [f"Perda até {n.lower()}" for n in nomes[1:]] + ["Tratamento iniciado"],
+            y=perdas + [0],
+            measure=["absolute"] + ["relative"] * (len(perdas) - 1) + ["total"],
+            decreasing=dict(marker=dict(color=t.ATRASADO)),
+            increasing=dict(marker=dict(color=t.GHC_PETROLEO)),
+            totals=dict(marker=dict(color=t.GHC_VERDE)),
+            connector=dict(line=dict(color=t.GRADE)),
+            hovertemplate="%{x}: %{y} ciclos<extra></extra>",
+        )
+    )
+    cascata.update_xaxes(tickangle=-20)
+    cascata.update_yaxes(title_text="ciclos")
+    return com_alternativas(
+        _layout(fig, 360),
+        "Funil",
+        [("Barras com conversão", _layout(barras, 360)), ("Cascata de perdas", _layout(cascata, 360))],
+    )
 
 
 def _seguro(fn, ds) -> go.Figure:

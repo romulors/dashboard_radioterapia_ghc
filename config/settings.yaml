@@ -17,20 +17,31 @@ acelerador:
     - {inicio: "10:00", fim: "11:00", vaga_minutos: 20}
     - {inicio: "15:00", fim: "16:00", vaga_minutos: 20}
 
+# Tomógrafo de planejamento: vagas por semana (Romulo, 06/11/2026).
+tomografo:
+  vagas_por_semana: 30
+
 metas:
   ocupacao_acelerador: [0.80, 0.85]
-  ocupacao_tomografo: [0.80, 0.85]
+  # Ocupação do tomógrafo: entre 60% e 80% (Romulo, 06/11/2026).
+  # Taxa = exames do mês ÷ (vagas_tomografo_semana × semanas do mês).
+  ocupacao_tomografo: [0.60, 0.80]
   # Prazo (dias úteis) por tipo de fluxo, como configurado no Aria.
   prazo_planejamento_dias_uteis:
     Urgência: 1
     Prioridade: 5
     Eletivo: 10
-  # Metas ainda não definidas pela gestão: deixe null até decidir (o painel mostra "Sem meta definida").
-  # Exemplos de preenchimento: pct_no_prazo: [0.80, 1.0]   lead_time_mediana_dias: 10
+  # Metas sem definição ficam null (o painel mostra "Sem meta definida").
   # Pacientes novos (que iniciaram tratamento) por mês: a meta é ficar ACIMA deste número.
   pacientes_novos_mes: 60
-  pct_no_prazo: null
-  lead_time_mediana_dias: null
+  # Tarefas de planejamento no prazo: ACIMA de 90%, estrito (Romulo, 06/11/2026).
+  pct_no_prazo: [0.90, 1.0]
+  # Sessões de radioterapia (dia + noite) por mês: ACIMA deste número (Romulo, 06/11/2026).
+  sessoes_mes: 850
+  # Tempo médio de duração das sessões: ABAIXO de 15 min, estrito (Romulo, 06/11/2026).
+  duracao_sessao_min: 15
+  # Mediana da duração do ciclo: ABAIXO de 10 dias, estrito (definida pelo Romulo em 06/11/2026).
+  lead_time_mediana_dias: 10
 
 app:
   host: "127.0.0.1"

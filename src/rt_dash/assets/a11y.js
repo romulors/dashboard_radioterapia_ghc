@@ -622,6 +622,10 @@
       "Pontos": function () {
         return { data: porTraco(e, function (t, v, i) { return linha(t, v, i, { mode: "markers", marker: { color: v.cor, size: multi ? 7 : 10 } }); }), layout: layoutDe(e) };
       },
+      // Catálogo T5: degraus mostram valores que mudam em saltos (mês a mês).
+      "Degraus": function () {
+        return { data: porTraco(e, function (t, v, i) { return linha(t, v, i, { line: { color: v.cor, width: 2.5, shape: "hv" } }); }), layout: layoutDe(e) };
+      },
     };
     // Séries de tamanhos diferentes (ex.: pontos fora de controle por cima da linha) só trocam linha ↔ pontos.
     var iguais = p.every(function (v) { return v.x.length === p[0].x.length; });
@@ -630,6 +634,7 @@
     if (iguais && multi && positivos && soBarras) nomes.push("Barras empilhadas");
     if (iguais) nomes.push("Área");
     nomes.push("Pontos");
+    nomes.push("Degraus");
     return montarLista(nomeSerie(e, p), nomes, opcoes);
   }
 
@@ -663,6 +668,16 @@
           return o;
         }), layout: layoutDe(e) };
       },
+      // Catálogo M9: pirulito = haste fina + ponto; menos tinta que a barra para muitas categorias.
+      "Pirulito": function () {
+        return { data: porTraco(e, function (t, v) {
+          var o = pegarComuns(t);
+          o.type = "scatter"; o.mode = "markers"; o.x = v.x; o.y = v.y;
+          o.marker = { color: (t.marker && typeof t.marker.color === "string" && t.marker.color) || v.cor, size: 11 };
+          o.error_x = { type: "data", symmetric: false, array: [], arrayminus: v.x.map(function (x) { return typeof x === "number" ? Math.max(x, 0) : 0; }), thickness: 2, width: 0, color: v.cor };
+          return o;
+        }), layout: layoutDe(e) };
+      },
       "Colunas": function () {
         return { data: porTraco(e, function (t, v) {
           var o = pegarComuns(t);
@@ -673,7 +688,7 @@
         }, false), layout: layoutDe(e, { trocarEixos: true, semMarcas: true, barmode: !multi ? modoUnico : (e.layout.barmode === "stack" ? "stack" : "group") }) };
       },
     };
-    var nomes = multi ? ["Barras agrupadas"].concat(soBarras ? ["Barras empilhadas"] : [], ["Pontos", "Colunas"]) : ["Barras", "Pontos", "Colunas"];
+    var nomes = multi ? ["Barras agrupadas"].concat(soBarras ? ["Barras empilhadas"] : [], ["Pontos", "Colunas"]) : ["Barras", "Pirulito", "Pontos", "Colunas"];
     var atual = soBarras
       ? (multi ? (e.layout.barmode === "stack" ? "Barras empilhadas" : "Barras agrupadas") : "Barras")
       : "Pontos";
@@ -723,9 +738,11 @@
       "Caixa": conv("box", { boxpoints: "outliers" }),
       "Violino": conv("violin", { box: { visible: true }, meanline: { visible: true }, points: false }),
       "Pontos": conv("box", { boxpoints: "all", jitter: 0.6, pointpos: 0, fillcolor: "rgba(0,0,0,0)", line: { width: 0 }, marker: { size: 5, opacity: 0.6 } }),
+      // Catálogo D4 + D6: caixa com cada observação ao lado (jitter).
+      "Caixa com pontos": conv("box", { boxpoints: "all", jitter: 0.5, pointpos: -1.6, marker: { size: 4, opacity: 0.55 } }),
     };
     var atual = p[0].tipo === "violin" ? "Violino" : "Caixa";
-    return montarLista(atual, ["Caixa", "Violino", "Pontos"], opcoes);
+    return montarLista(atual, ["Caixa", "Violino", "Caixa com pontos", "Pontos"], opcoes);
   }
 
   // Pontos que são observações individuais por grupo (dot strip): alternativas são caixa e violino.
@@ -740,7 +757,8 @@
         }, false), layout: layoutDe(e, { semMarcas: true, eixoY: { title: { text: "" } } }) };
       };
     };
-    return montarLista("Pontos", ["Caixa", "Violino"], {
+    return montarLista("Pontos", ["Caixa", "Violino", "Caixa com pontos"], {
+      "Caixa com pontos": conv("box", { boxpoints: "all", jitter: 0.5, pointpos: -1.6, marker: { size: 4, opacity: 0.55 } }),
       "Caixa": conv("box", { boxpoints: "outliers", boxmean: true }),
       "Violino": conv("violin", { box: { visible: true }, meanline: { visible: true }, points: false }),
     });
@@ -850,7 +868,25 @@
       data: clonar(gd.data || []), layout: clonar(gd.layout || {}),
       valores: (gd._fullData || []).map(resumoTraco), indice: 0, id: idDe(gd),
     };
-    try { e.lista = permitido ? classificar(e) : []; } catch (err) { e.lista = []; }
+    var meta = (e.layout && typeof e.layout.meta === "object" && e.layout.meta) || {};
+    try { e.lista = permitido && meta.rt_auto !== false ? classificar(e) : []; } catch (err) { e.lista = []; }
+    // Alternativas montadas no servidor (viz/alternativas.py) entram depois das automáticas.
+    var extras = permitido && Array.isArray(meta.rt_alternativas) ? meta.rt_alternativas : [];
+    if (extras.length) {
+      if (!e.lista.length) e.lista = [{ nome: meta.rt_nome || "Original", original: true }];
+      else if (meta.rt_nome) e.lista[0].nome = meta.rt_nome;
+      var usados = {};
+      e.lista.forEach(function (x) { usados[x.nome] = true; });
+      extras.forEach(function (a) {
+        if (usados[a.nome]) return;
+        usados[a.nome] = true;
+        e.lista.push({ nome: a.nome, montar: function () {
+          var l = clonar(a.layout || {});
+          if (e.layout.template) l.template = clonar(e.layout.template);
+          return { data: clonar(a.data || []), layout: l };
+        } });
+      });
+    }
     e.dados = gd.data;
     gd._rtVar = e;
     atualizarContador(gd);

@@ -10,6 +10,7 @@ import pandas as pd
 import plotly.graph_objects as go
 
 from rt_dash.viz import theme as t
+from rt_dash.viz.alternativas import com_alternativas
 
 UNIDADES = {"h": ("horas", 60.0), "d": ("dias", 60.0 * 24)}
 
@@ -46,11 +47,15 @@ def serie_mensal(
     tipo: str = "linha",
     meta: tuple[float, float] | None = None,
     meta_minima: float | None = None,
+    meta_rotulo: str | None = None,
     media_meses: int | None = 6,
     mes_selecionado: str | None = None,
     altura: int = 300,
 ) -> go.Figure:
-    """Série mensal com uma ou mais séries (coluna `serie`)."""
+    """Série mensal com uma ou mais séries (coluna `serie`).
+
+    `meta_minima` desenha a linha de uma meta de limite único; `meta_rotulo` troca o texto padrão ("acima de").
+    """
     if df.empty:
         return vazio()
     df = _ordenar_meses(df)
@@ -114,9 +119,10 @@ def serie_mensal(
         fig.add_hline(
             y=meta_minima,
             line=dict(color=t.GHC_VERDE, dash="dash", width=1.5),
-            annotation_text=f"Meta: acima de {format(meta_minima, formato)}",
-            annotation_position="top left",
+            annotation_text=meta_rotulo or f"Meta: acima de {format(meta_minima, formato)}",
+            annotation_position="top left" if tipo == "linha" else "top right",
             annotation_font=dict(size=11, color=t.GHC_VERDE),
+            annotation_bgcolor=t.CARTAO,  # legível sobre as barras empilhadas
         )
     if media_meses and tipo == "linha" and len(ordem_series) == 1:
         media = df.groupby("mes")["valor"].sum().sort_index().tail(media_meses).mean()
@@ -139,6 +145,9 @@ def serie_mensal(
         baixo = min([total.min(), *limites]) - folga
         alto = max([total.max(), *limites]) + folga
         fig.update_yaxes(range=[baixo, alto])
+    elif meta_minima is not None and tipo == "barras_empilhadas":
+        topo = df.groupby("mes")["valor"].sum().max()
+        fig.update_yaxes(range=[0, max(topo, meta_minima) * 1.12])
     fig.update_layout(height=altura, showlegend=len(ordem_series) > 1, clickmode="event")
     return fig
 
@@ -395,7 +404,57 @@ def gantt_ciclo(ciclo: pd.DataFrame, limiar_espera: pd.Series | None = None, alt
     )
     fig.update_yaxes(autorange="reversed", automargin=True)
     fig.update_xaxes(type="date", showgrid=True, gridcolor=t.GRADE, tickformat="%d/%m")
-    return fig
+    # Alternativas do catálogo: marcos do ciclo (S2) e espera × execução em horas (P3).
+    marcos = go.Figure(
+        go.Scatter(
+            x=c["termino"],
+            y=c["rotulo"],
+            mode="markers+lines",
+            line=dict(color=t.GRADE, width=1),
+            marker=dict(
+                size=11,
+                color=[t.CORES_ETAPA.get(e, t.NEUTRO) for e in c["etapa"]],
+                symbol=["diamond" if a > 0 else "circle" for a in c["atraso_min"].fillna(0)],
+                line=dict(width=1, color=t.TEXTO),
+            ),
+            customdata=c[["etapa"]].assign(t=c["termino"].dt.strftime("%d/%m %H:%M")).to_numpy(),
+            hovertemplate="%{y}<br>%{customdata[0]}<br>Término: %{customdata[1]}<extra></extra>",
+            name="Término",
+        )
+    )
+    marcos.update_yaxes(autorange="reversed", automargin=True)
+    marcos.update_xaxes(type="date", showgrid=True, gridcolor=t.GRADE, tickformat="%d/%m")
+    marcos.update_layout(height=fig.layout.height, margin=dict(l=8, r=16, t=36, b=32), showlegend=False)
+    horas_exec = ((c["termino"] - c["inicio"]) / pd.Timedelta(hours=1)).clip(lower=0)
+    barras = go.Figure(
+        [
+            go.Bar(
+                y=c["rotulo"],
+                x=horas.clip(lower=0),
+                orientation="h",
+                name="Espera (h)",
+                marker_color="#D7DEE2",
+                hovertemplate="%{y}<br>Espera: %{x:.1f} h<extra></extra>",
+            ),
+            go.Bar(
+                y=c["rotulo"],
+                x=horas_exec,
+                orientation="h",
+                name="Execução (h)",
+                marker_color=t.GHC_PETROLEO,
+                hovertemplate="%{y}<br>Execução: %{x:.1f} h<extra></extra>",
+            ),
+        ]
+    )
+    barras.update_yaxes(autorange="reversed", automargin=True)
+    barras.update_xaxes(title_text="horas")
+    barras.update_layout(
+        barmode="stack",
+        height=fig.layout.height,
+        margin=dict(l=8, r=16, t=36, b=32),
+        legend=dict(orientation="h", y=1.02, x=0),
+    )
+    return com_alternativas(fig, "Gantt", [("Marcos do ciclo", marcos), ("Espera e execução", barras)])
 
 
 def cascata_ciclo(ciclo: pd.DataFrame, unidade: str, altura: int = 340) -> go.Figure:
@@ -421,7 +480,35 @@ def cascata_ciclo(ciclo: pd.DataFrame, unidade: str, altura: int = 340) -> go.Fi
     fig.update_layout(height=altura, showlegend=False, margin=dict(l=48, r=16, t=24, b=120))
     fig.update_yaxes(title_text=f"acumulado ({nome})")
     fig.update_xaxes(tickangle=-40)
-    return fig
+    # Alternativas do catálogo: degraus do acumulado (T5) e barras por atividade, ordenadas (M1).
+    rotulos = c["ordem"].map("{:02d}".format) + ". " + c["atividade_generica"]
+    degraus = go.Figure(
+        go.Scatter(
+            x=rotulos,
+            y=passos.cumsum(),
+            mode="lines+markers",
+            line=dict(shape="hv", color=t.GHC_PETROLEO, width=2.5),
+            hovertemplate="%{x}<br>Acumulado: %{y:.1f} " + nome + "<extra></extra>",
+            name="Acumulado",
+        )
+    )
+    degraus.update_layout(height=altura, showlegend=False, margin=dict(l=48, r=16, t=24, b=120))
+    degraus.update_yaxes(title_text=f"acumulado ({nome})", rangemode="tozero")
+    degraus.update_xaxes(tickangle=-40)
+    ordem = passos.sort_values()
+    barras = go.Figure(
+        go.Bar(
+            y=rotulos.loc[ordem.index],
+            x=ordem,
+            orientation="h",
+            marker_color=t.GHC_PETROLEO,
+            hovertemplate="%{y}<br>%{x:.1f} " + nome + "<extra></extra>",
+        )
+    )
+    barras.update_layout(height=max(altura, 22 * len(c) + 60), showlegend=False, margin=dict(l=8, r=16, t=24, b=40))
+    barras.update_xaxes(title_text=nome)
+    barras.update_yaxes(automargin=True)
+    return com_alternativas(fig, "Cascata", [("Degraus do acumulado", degraus), ("Barras por atividade", barras)])
 
 
 def comparacao_referencia(ciclo: pd.DataFrame, faixa: pd.DataFrame, altura: int = 320) -> go.Figure:
@@ -471,7 +558,61 @@ def comparacao_referencia(ciclo: pd.DataFrame, faixa: pd.DataFrame, altura: int 
     fig.update_layout(height=altura, margin=dict(l=48, r=16, t=36, b=120))
     fig.update_yaxes(title_text="dias desde a importação da TC", rangemode="tozero")
     fig.update_xaxes(tickangle=-40)
-    return fig
+    if faixa.empty:
+        return com_alternativas(fig, "Paciente × faixa do fluxo", [], automaticas=True)
+    # Alternativas do catálogo: desvio da mediana (V3, barras divergentes) e pontos com faixa P25–P75 (V2).
+    f = faixa.reindex(x)
+    paciente = (c["acumulado_min"] / 1440).to_numpy()
+    desvio = paciente - f["mediana"].to_numpy()
+    divergente = go.Figure(
+        go.Bar(
+            x=x,
+            y=desvio,
+            marker_color=[t.ATRASADO if d > 0 else t.NO_PRAZO for d in desvio],
+            marker_pattern_shape=["/" if d > 0 else "" for d in desvio],
+            hovertemplate="%{x}<br>%{y:+.1f} dias em relação à mediana do fluxo<extra></extra>",
+            name="Desvio",
+        )
+    )
+    divergente.add_hline(y=0, line_color=t.TEXTO, line_width=1)
+    divergente.update_layout(height=altura, showlegend=False, margin=dict(l=48, r=16, t=36, b=120))
+    divergente.update_yaxes(title_text="dias acima (+) ou abaixo (−) da mediana")
+    divergente.update_xaxes(tickangle=-40)
+    pontos = go.Figure(
+        [
+            go.Scatter(
+                x=x,
+                y=f["mediana"],
+                mode="markers",
+                name="Mediana do fluxo (P25–P75)",
+                marker=dict(color=t.GHC_AGUA, size=9, symbol="line-ew-open", line=dict(width=3)),
+                error_y=dict(
+                    type="data",
+                    symmetric=False,
+                    array=(f["p75"] - f["mediana"]).to_numpy(),
+                    arrayminus=(f["mediana"] - f["p25"]).to_numpy(),
+                    color=t.GHC_AGUA,
+                    thickness=6,
+                    width=0,
+                ),
+                hovertemplate="%{x}<br>Mediana: %{y:.1f} dias<extra></extra>",
+            ),
+            go.Scatter(
+                x=x,
+                y=paciente,
+                mode="markers",
+                name="Paciente",
+                marker=dict(color=t.GHC_VERDE, size=10),
+                hovertemplate="%{x}<br>Paciente: %{y:.1f} dias<extra></extra>",
+            ),
+        ]
+    )
+    pontos.update_layout(height=altura, margin=dict(l=48, r=16, t=36, b=120))
+    pontos.update_yaxes(title_text="dias desde a importação da TC", rangemode="tozero")
+    pontos.update_xaxes(tickangle=-40)
+    return com_alternativas(
+        fig, "Paciente × faixa do fluxo", [("Desvio da mediana", divergente), ("Pontos e faixa P25–P75", pontos)]
+    )
 
 
 def histograma_espera(sessoes: pd.DataFrame, altura: int = 300) -> go.Figure:

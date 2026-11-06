@@ -58,8 +58,7 @@ sem enviar nada para fora do computador.
 
 ## 3. Metas a definir com a gestão
 
-- [ ] `metas.pct_no_prazo` e `metas.lead_time_mediana_dias` estão `null` em `config/settings.yaml`
-  (o painel mostra "Sem meta definida").
+- [x] `metas.pct_no_prazo` (≥ 90%) e `metas.lead_time_mediana_dias` (abaixo de 10 dias) definidas em 06/11.
 - [ ] Tolerâncias de cada meta no scorecard de KPIs.
 
 ## 4. Interface e acessibilidade

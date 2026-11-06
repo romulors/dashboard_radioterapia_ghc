@@ -89,6 +89,27 @@ def tomografias_por_mes(ds: Dataset, _: Settings) -> pd.DataFrame:
 
 
 @indicador(
+    "ocupacao_tomografo",
+    "Taxa de ocupação do tomógrafo",
+    "%",
+    origem="J",
+    formato=".0%",
+    nota="Exames estimados por 'Importar TC e Fusao' concluídas, até haver exportação da agenda do tomógrafo",
+    descricao="Exames do mês ÷ (vagas por semana × semanas do mês); vagas em config/settings.yaml",
+    polaridade="faixa",
+)
+def ocupacao_tomografo(ds: Dataset, settings: Settings) -> pd.DataFrame:
+    if not settings.vagas_tomografo_semana:
+        return pd.DataFrame(columns=["mes", "valor"])
+    t = ds.tarefas
+    tc = t[(t["atividade"] == "Importar TC e Fusao") & (t["status"] == "Concluído")]
+    exames = _contar(tc, ["mes"])
+    semanas = exames["mes"].dt.days_in_month / 7
+    exames["valor"] = exames["valor"] / (settings.vagas_tomografo_semana * semanas)
+    return exames
+
+
+@indicador(
     "planejamentos",
     "Número de planejamentos",
     "planejamentos",
@@ -174,6 +195,81 @@ def sessoes_por_tratamento(ds: Dataset, _: Settings) -> pd.DataFrame:
 def pct_no_prazo(ds: Dataset, _: Settings) -> pd.DataFrame:
     j = ds.jornada[ds.jornada["no_prazo"].notna()]
     return j.groupby("mes")["no_prazo"].mean().rename("valor").reset_index()
+
+
+# ---------------------------------------------------------------- históricos dos cartões da aba KPIs
+@indicador(
+    "sessoes_noite",
+    "Sessões à noite",
+    "sessões",
+    descricao="Sessões de tratamento no AL agendadas a partir das 19h",
+    polaridade="neutra",
+)
+def sessoes_noite(ds: Dataset, _: Settings) -> pd.DataFrame:
+    s = ds.sessoes[ds.sessoes["eh_tratamento"] & (ds.sessoes["turno"] == "Noite")]
+    return _contar(s, ["mes"])
+
+
+@indicador(
+    "pacientes_planejamento",
+    "Pacientes em planejamento",
+    "pacientes",
+    descricao="Pacientes distintos com ciclo de planejamento (TC ou radiografia importada) no mês",
+    polaridade="neutra",
+)
+def pacientes_em_planejamento(ds: Dataset, _: Settings) -> pd.DataFrame:
+    c = ds.ciclos[ds.ciclos["tem_importacao"]]
+    return c.groupby("mes")["paciente_id"].nunique().rename("valor").reset_index()
+
+
+@indicador(
+    "lead_time",
+    "Mediana da duração do ciclo",
+    "dias",
+    formato=".1f",
+    descricao="Mediana, por mês da importação, dos dias entre a importação da TC e a última atividade do ciclo",
+    polaridade="menor",
+)
+def mediana_ciclo(ds: Dataset, _: Settings) -> pd.DataFrame:
+    c = ds.ciclos[ds.ciclos["tem_importacao"]].dropna(subset=["lead_time_dias", "mes"])
+    return c.groupby("mes")["lead_time_dias"].median().rename("valor").reset_index()
+
+
+@indicador(
+    "ate_tratamento",
+    "Importar TC → início do tratamento",
+    "dias",
+    formato=".1f",
+    descricao="Mediana, por mês da importação, dos dias entre a importação da TC e o início do tratamento",
+    polaridade="menor",
+)
+def ate_tratamento(ds: Dataset, _: Settings) -> pd.DataFrame:
+    c = ds.ciclos[ds.ciclos["tem_importacao"]].dropna(subset=["ate_tratamento_dias", "mes"])
+    return c.groupby("mes")["ate_tratamento_dias"].median().rename("valor").reset_index()
+
+
+@indicador(
+    "espera_checkin",
+    "Espera do check-in ao início da sessão",
+    "min",
+    descricao="Mediana mensal dos minutos entre o check-in e o início da sessão de tratamento",
+    polaridade="menor",
+)
+def espera_checkin(ds: Dataset, _: Settings) -> pd.DataFrame:
+    s = ds.sessoes[ds.sessoes["eh_tratamento"]].dropna(subset=["espera_checkin_min"])
+    return s.groupby("mes")["espera_checkin_min"].median().rename("valor").reset_index()
+
+
+@indicador(
+    "pacientes_atendidos",
+    "Pacientes atendidos no acelerador",
+    "pacientes",
+    descricao="Pacientes distintos com sessão de tratamento no AL no mês",
+    polaridade="neutra",
+)
+def pacientes_atendidos(ds: Dataset, _: Settings) -> pd.DataFrame:
+    s = ds.sessoes[ds.sessoes["eh_tratamento"]]
+    return s.groupby("mes")["paciente_id"].nunique().rename("valor").reset_index()
 
 
 def pacientes_por_sitio(ds: Dataset) -> pd.DataFrame:
