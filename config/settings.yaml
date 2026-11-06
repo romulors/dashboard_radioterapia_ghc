@@ -25,6 +25,10 @@ metas:
     Urgência: 1
     Prioridade: 5
     Eletivo: 10
+  # Metas ainda não definidas pela gestão: deixe null até decidir (o painel mostra "Sem meta definida").
+  # Exemplos de preenchimento: pct_no_prazo: [0.80, 1.0]   lead_time_mediana_dias: 10
+  pct_no_prazo: null
+  lead_time_mediana_dias: null
 
 app:
   host: "127.0.0.1"

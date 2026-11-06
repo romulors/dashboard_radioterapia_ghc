@@ -35,13 +35,30 @@ def cabecalho() -> html.Header:
         children=[
             html.Div(
                 className="ghc-marca",
-                children=html.Img(src="/assets/ghc_logo.png", alt="GHC · 100% SUS · Grupo Hospitalar Conceição", className="ghc-logo-img"),
+                children=html.Img(
+                    src="/assets/ghc_logo.png",
+                    alt="GHC · 100% SUS · Grupo Hospitalar Conceição",
+                    className="ghc-logo-img",
+                ),
             ),
             html.Div(
                 className="ghc-titulo",
                 children=[
                     html.H1("Indicadores Radioterapia"),
                     html.Span("Fluxo de planejamento e tratamento · Fonte: Sistema Aria", className="ghc-sub"),
+                ],
+            ),
+            html.Div(
+                className="ghc-acessibilidade",
+                children=[
+                    dbc.Switch(
+                        id="a11y-contraste",
+                        label="Alto contraste",
+                        value=False,
+                        persistence=True,
+                        persistence_type="local",
+                        className="switch-contraste",
+                    ),
                 ],
             ),
         ],
@@ -138,22 +155,66 @@ def kpi(id_: str, titulo: str) -> html.Div:
     )
 
 
-def grafico(id_: str, altura: int | None = None) -> dcc.Graph:
+def grafico(id_: str, altura: int | None = None, descricao: str = "") -> html.Figure:
+    """Gráfico acessível (WCAG 1.1.1 e 1.3.1): o resumo em texto e a tabela de dados são gerados dos próprios
+    dados a cada atualização por `assets/a11y.js`; `descricao` é o texto inicial, antes do primeiro desenho."""
     estilo = {"height": f"{altura}px"} if altura else None
-    return dcc.Loading(
-        dcc.Graph(
-            id=id_,
-            style=estilo,
-            config={
-                "displaylogo": False,
-                "locale": "pt-BR",
-                "modeBarButtonsToRemove": ["lasso2d", "select2d", "autoScale2d"],
-                "toImageButtonOptions": {"format": "png", "scale": 2},
-            },
-        ),
-        type="dot",
-        color=t.GHC_PETROLEO,
+    return html.Figure(
+        className="grafico-a11y",
+        children=[
+            dcc.Loading(
+                dcc.Graph(
+                    id=id_,
+                    style=estilo,
+                    config={
+                        "displaylogo": False,
+                        "locale": "pt-BR",
+                        "modeBarButtonsToRemove": ["lasso2d", "select2d", "autoScale2d"],
+                        "toImageButtonOptions": {"format": "png", "scale": 2},
+                    },
+                ),
+                type="dot",
+                color=t.GHC_PETROLEO,
+            ),
+            html.Figcaption(descricao or "Carregando gráfico…", id=f"{id_}-alt", className="grafico-alt"),
+            html.Details(
+                [
+                    html.Summary("Ver dados em tabela"),
+                    html.Div(id=f"{id_}-tabela", className="grafico-tabela"),
+                ],
+                className="grafico-detalhes",
+            ),
+        ],
     )
+
+
+def status_badge(codigo: str, texto: str) -> html.Span:
+    """Situação frente à meta com ícone + palavra (nunca só cor, WCAG 1.4.1)."""
+    icone, _ = t.STATUS.get(codigo, t.STATUS["sem_meta"])
+    return html.Span(
+        [html.Span(icone, className="status-icone", **{"aria-hidden": "true"}), " ", texto],
+        className=f"status status-{codigo}",
+    )
+
+
+def kpi_meta(id_: str, titulo: str, destino: str | None = None) -> html.Div:
+    """KPI de manchete: valor, situação frente à meta e link para a aba onde é analisado."""
+    filhos = [
+        html.H3(titulo, className="kpi-titulo"),
+        html.Div("–", id=f"{id_}-valor", className="kpi-valor"),
+        html.Div("", id=f"{id_}-status", className="kpi-status"),
+        html.Div("", id=f"{id_}-nota", className="kpi-nota"),
+    ]
+    if destino:
+        filhos.append(
+            html.Button(
+                f"Ver em {destino[1]} →",
+                id={"type": "ir-aba", "aba": destino[0], "origem": id_},
+                className="link-aba",
+                n_clicks=0,
+            )
+        )
+    return html.Div(filhos, className="kpi kpi-meta")
 
 
 def seletor_unidade(id_: str, valor: str = "h") -> dbc.RadioItems:

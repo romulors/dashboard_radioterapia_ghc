@@ -29,12 +29,24 @@ class Indicador:
     grafico: str = "linha"  # linha | barras_empilhadas | barras_agrupadas | barras_100
     meta: tuple[float, float] | None = None
     nota: str = ""
+    # Ficha técnica: o que mede, como se calcula e se "mais" é melhor ou pior.
+    descricao: str = ""
+    polaridade: str = "neutra"  # maior (maior é melhor) | menor (menor é melhor) | faixa | neutra
+    fonte: str = "Sistema Aria"
+    tipo: str = "resultado"  # resultado (lagging) | tendencia (leading)
 
     def calcular(self, ds: Dataset, settings: Settings) -> pd.DataFrame:
         return self.funcao(ds, settings)
 
 
 REGISTRO: dict[str, Indicador] = {}
+
+POLARIDADES = {
+    "maior": "quanto maior, melhor",
+    "menor": "quanto menor, melhor",
+    "faixa": "deve ficar dentro da faixa",
+    "neutra": "volume (sem direção boa ou ruim)",
+}
 
 
 def indicador(id: str, titulo: str, unidade: str, **kwargs) -> Callable[[FuncaoIndicador], FuncaoIndicador]:
@@ -45,3 +57,20 @@ def indicador(id: str, titulo: str, unidade: str, **kwargs) -> Callable[[FuncaoI
         return funcao
 
     return registrar
+
+
+def ficha_tecnica() -> pd.DataFrame:
+    """Uma linha por indicador registrado: o que é, como se calcula, unidade, polaridade e fonte."""
+    return pd.DataFrame(
+        [
+            {
+                "Indicador": i.titulo,
+                "Como se calcula": i.descricao or i.nota,
+                "Unidade": i.unidade,
+                "Leitura": POLARIDADES.get(i.polaridade, i.polaridade),
+                "Tipo": "Tendência" if i.tipo == "tendencia" else "Resultado",
+                "Fonte": i.fonte,
+            }
+            for i in REGISTRO.values()
+        ]
+    )

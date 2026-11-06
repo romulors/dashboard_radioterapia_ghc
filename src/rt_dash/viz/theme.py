@@ -21,7 +21,18 @@ PALETA_GRADIENTE = ["#05E3E3", "#04BABA", "#038C8C", "#026969", "#014040"]
 PALETA_COMPLEMENTARES = ["#004231", "#21826A", "#61C2AA", "#974B32", "#421000"]
 PALETA_CONTRASTE = ["#004231", "#32977E", "#423F00", "#421000", "#180042"]
 # Séries sem cor fixa (sítios, etapas do funil): tons alternados para separar categorias vizinhas
-PALETA_CATEGORICA = ["#038C8C", "#8C5A03", "#21826A", "#8C3603", "#143737", "#61C2AA", "#974B32", "#32977E", "#180042", "#423F00"]
+PALETA_CATEGORICA = [
+    "#038C8C",
+    "#8C5A03",
+    "#21826A",
+    "#8C3603",
+    "#143737",
+    "#61C2AA",
+    "#974B32",
+    "#32977E",
+    "#180042",
+    "#423F00",
+]
 
 # Dados: cores com significado fixo
 CORES_FLUXO = {
@@ -47,6 +58,42 @@ NEUTRO = "#9CA3AF"
 ESCALA_SEQUENCIAL = [[0, "#FFFFFF"], [0.25, "#04BABA"], [0.5, "#038C8C"], [0.75, "#026969"], [1, "#014040"]]
 ESCALA_DIVERGENTE = [[0, NO_PRAZO], [0.5, "#FFFFFF"], [1, ATRASADO]]
 
+# Modo alto contraste (WCAG 2.2: 1.4.1, 1.4.11). Cores sólidas com pelo menos 4,5:1 contra o branco;
+# cada série também ganha hachura (barras), traço (linhas) e símbolo (marcadores), aplicados em assets/a11y.js.
+ALTO_CONTRASTE = {
+    "#038C8C": "#006B6B",  # Eletivo, Simulação
+    "#04BABA": "#1F4E99",  # Dia, Recepção
+    "#014040": "#1A1A1A",  # Noite
+    "#C2AA61": "#7A5A00",  # Prioridade
+    "#8C3603": "#8C3603",  # Urgência, atrasado
+    "#180042": "#3B1F8C",  # Braquiterapia
+    "#61C2AA": "#4D4D4D",  # Retomografado
+    "#BFC5CA": "#6E6E6E",  # Sem tipo
+    "#9CA3AF": "#6E6E6E",  # neutro
+    "#026969": "#1A1A1A",  # Planejamento
+    "#038C3E": "#2E6B1F",  # Pré-Tratamento, no prazo
+    "#8C5A03": "#7A5A00",  # Controle de Qualidade
+    "#21826A": "#1F6B57",
+    "#143737": "#1A1A1A",
+    "#974B32": "#8C3603",
+    "#32977E": "#1F6B57",
+    "#423F00": "#7A5A00",
+    "#7ABBB1": "#4D4D4D",
+    "#006E77": "#004D4D",
+}
+ESCALA_ALTO_CONTRASTE = [[0, "#FFFFFF"], [0.25, "#B3D1D1"], [0.5, "#5E9999"], [0.75, "#1F6666"], [1, "#002B2B"]]
+PADROES_BARRA = ["", "/", "x", ".", "\\", "+", "-", "|"]
+TRACOS_LINHA = ["solid", "dash", "dot", "dashdot", "longdash", "longdashdot"]
+SIMBOLOS = ["circle", "square", "diamond", "triangle-up", "x", "star", "triangle-down", "cross"]
+
+# Status frente à meta: ícone + palavra, nunca só cor (WCAG 1.4.1)
+STATUS = {
+    "ok": ("✓", NO_PRAZO),
+    "atencao": ("!", "#7A5A00"),
+    "fora": ("✕", ATRASADO),
+    "sem_meta": ("–", TEXTO_SECUNDARIO),
+}
+
 FONTE = "Inter, 'Segoe UI', Roboto, Arial, sans-serif"
 
 MESES_PT = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"]
@@ -70,6 +117,8 @@ def registrar_template() -> None:
             legend=dict(orientation="h", y=1.02, yanchor="bottom", x=0, title_text=""),
             hoverlabel=dict(font=dict(family=FONTE, size=12), bgcolor=CARTAO),
             separators=",.",
-        )
+        ),
+        # Contorno escuro nas barras: garante 3:1 contra o fundo mesmo nas cores claras (WCAG 1.4.11).
+        data=dict(bar=[go.Bar(marker_line_width=0.8, marker_line_color="rgba(43,43,43,0.65)")]),
     )
     pio.templates.default = "plotly_white+ghc"

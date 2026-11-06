@@ -23,7 +23,6 @@ KPIS = [
 ]
 
 
-
 def _comparar(serie: pd.DataFrame, mes: pd.Timestamp) -> tuple[float | None, str]:
     total = serie.groupby("mes")["valor"].sum().sort_index()
     atual = total.get(mes)

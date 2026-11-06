@@ -14,7 +14,14 @@ def _contar(df: pd.DataFrame, por: list[str], nome: str = "valor") -> pd.DataFra
     return df.groupby(por, observed=True).size().rename(nome).reset_index()
 
 
-@indicador("inicios", "Atividades de início em radioterapia", "inícios", origem="J, A")
+@indicador(
+    "inicios",
+    "Atividades de início em radioterapia",
+    "inícios",
+    origem="J, A",
+    descricao="Agendamentos do tipo “Início” no acelerador linear no mês",
+    polaridade="neutra",
+)
 def inicios_por_mes(ds: Dataset, _: Settings) -> pd.DataFrame:
     s = ds.sessoes
     return _contar(s[s["tipo_agendamento"] == "Início"], ["mes"])
@@ -25,6 +32,8 @@ def inicios_por_mes(ds: Dataset, _: Settings) -> pd.DataFrame:
     "Pacientes (sítios) que iniciaram tratamento",
     "pacientes",
     origem="J",
+    descricao="Pacientes distintos com agendamento “Início do Tratamento” no mês",
+    polaridade="maior",
 )
 def pacientes_que_iniciaram(ds: Dataset, _: Settings) -> pd.DataFrame:
     s = ds.sessoes[ds.sessoes["tipo_agendamento"] == "Início"]
@@ -37,6 +46,8 @@ def pacientes_que_iniciaram(ds: Dataset, _: Settings) -> pd.DataFrame:
     "sessões",
     origem="J, A",
     grafico="barras_empilhadas",
+    descricao="Sessões de tratamento no AL, separadas pelo horário agendado (dia até 18h45, noite a partir de 19h)",
+    polaridade="neutra",
 )
 def sessoes_por_turno(ds: Dataset, _: Settings) -> pd.DataFrame:
     s = ds.sessoes[ds.sessoes["eh_tratamento"]]
@@ -50,6 +61,8 @@ def sessoes_por_turno(ds: Dataset, _: Settings) -> pd.DataFrame:
     origem="J",
     formato=".0%",
     nota="Sessões ÷ (vagas por dia × dias com atendimento no mês)",
+    descricao="Sessões de tratamento ÷ (vagas por dia × dias com atendimento no mês)",
+    polaridade="faixa",
 )
 def ocupacao_acelerador(ds: Dataset, settings: Settings) -> pd.DataFrame:
     s = ds.sessoes[ds.sessoes["eh_tratamento"]]
@@ -64,6 +77,8 @@ def ocupacao_acelerador(ds: Dataset, settings: Settings) -> pd.DataFrame:
     "exames",
     origem="J",
     nota="Estimado por 'Importar TC e Fusao' até haver exportação das tomografias",
+    descricao="Tarefas “Importar TC e Fusao” concluídas no mês (exames) e pacientes distintos",
+    polaridade="neutra",
 )
 def tomografias_por_mes(ds: Dataset, _: Settings) -> pd.DataFrame:
     t = ds.tarefas
@@ -73,7 +88,14 @@ def tomografias_por_mes(ds: Dataset, _: Settings) -> pd.DataFrame:
     return pd.concat([exames, pacientes.assign(serie="Pacientes únicos")], ignore_index=True)
 
 
-@indicador("planejamentos", "Número de planejamentos", "planejamentos", origem="J, A, P1")
+@indicador(
+    "planejamentos",
+    "Número de planejamentos",
+    "planejamentos",
+    origem="J, A, P1",
+    descricao="Ciclos de planejamento com TC ou radiografia importada, pelo mês da importação",
+    polaridade="neutra",
+)
 def planejamentos_por_mes(ds: Dataset, _: Settings) -> pd.DataFrame:
     c = ds.ciclos[ds.ciclos["tem_importacao"]]
     return _contar(c, ["mes"])
@@ -85,6 +107,8 @@ def planejamentos_por_mes(ds: Dataset, _: Settings) -> pd.DataFrame:
     "planejamentos",
     origem="J, A, P2",
     grafico="barras_agrupadas",
+    descricao="Ciclos de planejamento por tipo de fluxo (Eletivo, Prioridade, Urgência)",
+    polaridade="neutra",
 )
 def planejamentos_por_fluxo(ds: Dataset, _: Settings) -> pd.DataFrame:
     c = ds.ciclos[ds.ciclos["tem_importacao"] & ds.ciclos["tipo_fluxo"].isin(TIPOS_FLUXO[:3])]
@@ -98,6 +122,8 @@ def planejamentos_por_fluxo(ds: Dataset, _: Settings) -> pd.DataFrame:
     origem="J, A, P2",
     grafico="barras_100",
     formato=".0%",
+    descricao="Participação de cada tipo de fluxo no total de planejamentos do mês",
+    polaridade="neutra",
 )
 def percentual_por_fluxo(ds: Dataset, settings: Settings) -> pd.DataFrame:
     n = planejamentos_por_fluxo(ds, settings)
@@ -112,6 +138,8 @@ def percentual_por_fluxo(ds: Dataset, settings: Settings) -> pd.DataFrame:
     origem="J",
     formato=".1f",
     nota="Exclui durações acima de 60 min (erros de registro)",
+    descricao="Média da duração (término − início) das sessões, excluindo registros acima de 60 min",
+    polaridade="neutra",
 )
 def duracao_media_sessao(ds: Dataset, _: Settings) -> pd.DataFrame:
     s = ds.sessoes[ds.sessoes["eh_tratamento"] & ds.sessoes["duracao_valida"]]
@@ -125,6 +153,8 @@ def duracao_media_sessao(ds: Dataset, _: Settings) -> pd.DataFrame:
     origem="J",
     formato=".1f",
     nota="Cursos iniciados no mês e com alta registrada",
+    descricao="Média de sessões por curso de tratamento iniciado no mês e com alta registrada",
+    polaridade="neutra",
 )
 def sessoes_por_tratamento(ds: Dataset, _: Settings) -> pd.DataFrame:
     c = ds.cursos[(ds.cursos["curso"] > 0) & ds.cursos["teve_alta"]]
@@ -132,7 +162,15 @@ def sessoes_por_tratamento(ds: Dataset, _: Settings) -> pd.DataFrame:
     return c.groupby(mes)["n_sessoes"].mean().rename("valor").rename_axis("mes").reset_index()
 
 
-@indicador("no_prazo", "Tarefas de planejamento concluídas no prazo", "%", origem="P7", formato=".0%")
+@indicador(
+    "no_prazo",
+    "Tarefas de planejamento concluídas no prazo",
+    "%",
+    origem="P7",
+    formato=".0%",
+    descricao="Tarefas de planejamento com término até o vencimento ÷ tarefas com vencimento",
+    polaridade="maior",
+)
 def pct_no_prazo(ds: Dataset, _: Settings) -> pd.DataFrame:
     j = ds.jornada[ds.jornada["no_prazo"].notna()]
     return j.groupby("mes")["no_prazo"].mean().rename("valor").reset_index()

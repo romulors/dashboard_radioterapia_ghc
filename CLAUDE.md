@@ -77,12 +77,27 @@ Regras:
 
 ## Abas implementadas
 
-Ordem e conteúdo (composição em `app/abas.py`, tipos de indicador conforme scopi.com.br/blog/tipos-de-indicadores):
-**Visão Geral** (resumo + "modo apresentação"), **KPIs** (KPIs do mês, acelerador e demais séries mensais),
-**Eficácia vs Eficiência** (objetivo atingido × recursos/tempo gastos), **Resultado vs Tendência** (o que ocorreu ×
-sinais de evolução), **Processos** (atividades, atrasos, composição) e **Jornada do Paciente** (lista + Gantt + CSV).
-Os callbacks seguem nos módulos de `pages/`; `abas.py` só decide onde cada cartão aparece (cada id uma única vez).
-Filtragem cruzada com estado único em `dcc.Store` (`store-filtros`, `store-selecao`).
+Ordem e conteúdo (composição em `app/abas.py`; cada aba tem uma pergunta de negócio em `PERGUNTAS`):
+**Visão Geral** (contexto e negócio, sem gráficos: propósito, frase-resumo, 4 manchetes com status, fluxo, perguntas,
+mapa das abas, definições e metas, qualidade dos dados, ficha técnica, acessibilidade), **KPIs** (scorecard do mês
+com meta/situação/tendência, bullet, win/loss, KPIs e séries mensais, modo apresentação), **Eficácia vs Eficiência**,
+**Resultado vs Tendência** (tendência = ciclos abertos, entradas × saídas, idade dos abertos), **Processos** (fluxo de
+valor por etapa, carta de controle, Pareto, dot strip, atividades, lollipop de atraso, dispersão) e **Jornada do Paciente**.
+Gráficos novos: cálculos em `metrics/fluxo.py`, figuras em `viz/novos.py`, callbacks em `app/pages/novos.py`.
+Cada indicador do registro tem ficha técnica (`descricao`, `polaridade`, `fonte`, `tipo`) exibida na Visão Geral.
+Metas ainda não definidas ficam `null` em `config/settings.yaml` (`pct_no_prazo`, `lead_time_mediana_dias`).
+Proposta que originou esta versão: https://claude.ai/artifact/TySDdDuP9ec9phWBxk7VZs
+
+## Acessibilidade (WCAG 2.2 AA / EN 301 549)
+
+- `components.grafico()` envolve cada gráfico em `<figure>` com resumo visível e "Ver dados em tabela";
+  `assets/a11y.js` gera o resumo e a tabela a partir dos dados desenhados (não escreva alt text à mão).
+- Interruptor "Alto contraste" (cabeçalho, salvo no navegador): `a11y.js` troca as cores pelo mapa
+  `ALTO_CONTRASTE` de `viz/theme.py` e acrescenta hachura, traço e símbolo por série. Cor nova em gráfico →
+  acrescente o par em `ALTO_CONTRASTE` (contraste ≥ 4,5:1 com branco).
+- Situação frente à meta sempre com ícone + palavra (`components.status_badge`, `metrics.fluxo.status_meta`).
+- `lang="pt-BR"`, link "Pular para o conteúdo", foco visível de 3 px, abas pelas setas, "Mês em destaque"
+  equivalente ao clique no gráfico, região `aria-live` com a seleção.
 
 ## Paleta
 

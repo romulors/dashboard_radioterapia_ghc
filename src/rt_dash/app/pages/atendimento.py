@@ -10,7 +10,6 @@ from rt_dash.metrics.monthly import (
     duracao_media_sessao,
     ocupacao_acelerador,
     sessoes_por_tratamento,
-    sessoes_por_turno,
 )
 from rt_dash.viz import figures as fig
 
@@ -23,14 +22,12 @@ KPIS = [
 ]
 
 
-
 def registrar(app: Dash, ctx: AppContext) -> None:
     @app.callback(
         [Output(f"{i}-valor", "children") for i, _ in KPIS]
         + [Output(f"{i}-nota", "children") for i, _ in KPIS]
         + [
             Output("g-al-ocupacao", "figure"),
-            Output("g-al-turno", "figure"),
             Output("g-al-espera", "figure"),
             Output("g-al-espera-hora", "figure"),
             Output("g-al-duracao-sitio", "figure"),
@@ -70,7 +67,6 @@ def registrar(app: Dash, ctx: AppContext) -> None:
                 media_meses=None,
                 mes_selecionado=mes,
             ),
-            fig.serie_mensal(sessoes_por_turno(ds, ctx.settings), tipo="barras_empilhadas", mes_selecionado=mes),
             fig.histograma_espera(s),
             fig.espera_por_hora(s),
             fig.duracao_por_sitio(s),

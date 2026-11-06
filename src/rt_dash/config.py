@@ -59,6 +59,8 @@ class Settings:
     meta_ocupacao_acelerador: tuple[float, float]
     meta_ocupacao_tomografo: tuple[float, float]
     prazo_planejamento_dias_uteis: dict[str, int] = field(default_factory=dict)
+    meta_pct_no_prazo: tuple[float, float] | None = None
+    meta_lead_time_dias: float | None = None
     host: str = "127.0.0.1"
     port: int = 8050
     debug: bool = False
@@ -87,6 +89,8 @@ def load_settings(path: Path | str = DEFAULT_SETTINGS, raiz: Path | None = None)
         meta_ocupacao_acelerador=tuple(metas["ocupacao_acelerador"]),
         meta_ocupacao_tomografo=tuple(metas["ocupacao_tomografo"]),
         prazo_planejamento_dias_uteis=dict(metas.get("prazo_planejamento_dias_uteis", {})),
+        meta_pct_no_prazo=tuple(metas["pct_no_prazo"]) if metas.get("pct_no_prazo") else None,
+        meta_lead_time_dias=float(metas["lead_time_mediana_dias"]) if metas.get("lead_time_mediana_dias") else None,
         host=app.get("host", "127.0.0.1"),
         port=int(app.get("port", 8050)),
         debug=bool(app.get("debug", False)),
