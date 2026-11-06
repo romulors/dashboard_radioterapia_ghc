@@ -99,6 +99,49 @@ def _fluxo_processo() -> html.Ol:
     )
 
 
+def _perguntas_por_aba(mapa: list[tuple[str, str]]) -> html.Div:
+    """Um cartão por aba (mesma borda do Mapa das abas); cada pergunta é uma linha inteira clicável."""
+    cartoes = []
+    for aba, rotulo in mapa:
+        itens = [(i, p) for i, (p, a) in enumerate(PERGUNTAS_NEGOCIO, 1) if a == aba]
+        if not itens:
+            continue
+        n = len(itens)
+        cartoes.append(
+            html.Section(
+                [
+                    html.H3(
+                        [rotulo, html.Span(f"{PERGUNTAS[aba][0]} · {n} pergunta{'s' if n > 1 else ''}")],
+                        className="grupo-perguntas-titulo",
+                    ),
+                    html.Ul(
+                        [
+                            html.Li(
+                                html.Button(
+                                    [
+                                        html.Span(str(i), className="pergunta-num", **{"aria-hidden": "true"}),
+                                        html.Span(p, className="pergunta-texto"),
+                                        html.Span("›", className="pergunta-seta", **{"aria-hidden": "true"}),
+                                    ],
+                                    id={"type": "ir-aba", "aba": aba, "origem": f"perg-{i}"},
+                                    n_clicks=0,
+                                    type="button",
+                                    className="pergunta-linha",
+                                    **{"aria-label": f"Pergunta {i}: {p} Abrir a aba {rotulo}."},
+                                )
+                            )
+                            for i, p in itens
+                        ],
+                        className="grupo-perguntas-lista",
+                    ),
+                ],
+                className="mapa-aba grupo-perguntas",
+                **{"aria-label": f"Perguntas respondidas na aba {rotulo}"},
+            )
+        )
+    return html.Div(cartoes, className="perguntas-por-aba")
+
+
 def visao_geral_aba(ctx: AppContext) -> html.Div:
     mapa = [
         ("kpis", "KPIs"),
@@ -159,14 +202,8 @@ def visao_geral_aba(ctx: AppContext) -> html.Div:
                     dbc.Col(
                         _secao(
                             "Perguntas que o painel responde",
-                            "Cada pergunta leva à aba onde ela é respondida.",
-                            html.Ol(
-                                [
-                                    html.Li([p, " ", _ir(aba, "→ abrir", f"perg-{i}")])
-                                    for i, (p, aba) in enumerate(PERGUNTAS_NEGOCIO, 1)
-                                ],
-                                className="lista-perguntas",
-                            ),
+                            "Clique numa pergunta para abrir a aba que a responde.",
+                            _perguntas_por_aba(mapa),
                         ),
                         lg=6,
                     ),

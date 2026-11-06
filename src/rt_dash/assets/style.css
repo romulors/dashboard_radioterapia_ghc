@@ -276,3 +276,21 @@ body.grafico-em-foco { overflow: hidden; }
 .cartao-expandido .cartao-sub { font-size: 14px; }
 .cartao-expandido .js-plotly-plot, .cartao-expandido .dash-graph { height: auto !important; }
 body.grafico-em-foco .tooltip { z-index: 1070; }
+
+/* Perguntas que o painel responde: agrupadas por aba, no estilo do Mapa das abas */
+.perguntas-por-aba { display: flex; flex-direction: column; gap: 10px; }
+.grupo-perguntas { padding: 10px 14px 6px; }
+.grupo-perguntas-titulo { font-size: 15px; font-weight: 700; margin: 0 0 2px; display: flex; flex-wrap: wrap;
+  justify-content: space-between; align-items: baseline; gap: 4px 12px; color: var(--texto); }
+.grupo-perguntas-titulo span { font-size: 12px; font-weight: 500; color: var(--texto-2); }
+.grupo-perguntas-lista { list-style: none; margin: 0; padding: 0; }
+.grupo-perguntas-lista li + li { border-top: 1px solid var(--grade); }
+.pergunta-linha { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 4px; background: none; border: 0;
+  text-align: left; font-size: 14px; color: var(--texto); border-radius: 6px; cursor: pointer; }
+.pergunta-linha:hover { background: #EEF6F6; }
+.pergunta-linha:hover .pergunta-texto { color: var(--ghc-verde); }
+.pergunta-num { flex: 0 0 24px; height: 24px; border-radius: 50%; background: #E3F1F1; color: var(--ghc-verde);
+  font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; }
+.pergunta-seta { margin-left: auto; color: var(--ghc-petroleo); font-weight: 700; font-size: 18px; line-height: 1; padding-left: 8px; }
+body.alto-contraste .pergunta-num { background: #fff; border: 1.5px solid #000; color: #000; }
+body.alto-contraste .pergunta-linha:hover { background: #fff; text-decoration: underline; }
