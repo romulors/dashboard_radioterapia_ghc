@@ -84,7 +84,6 @@ def criar_app(settings: Settings, ds: Dataset) -> Dash:
         suppress_callback_exceptions=False,
     )
     app.index_string = INDEX.replace("__A11Y__", _config_a11y())
-    opcoes_mes = [{"label": rotulo_mes(m), "value": m.strftime("%Y-%m")} for m in contexto.meses]
     app.layout = html.Div(
         className="pagina",
         children=[
@@ -99,25 +98,6 @@ def criar_app(settings: Settings, ds: Dataset) -> Dash:
                 id="conteudo",
                 tabIndex="-1",
                 children=[
-                    html.Div(
-                        className="chips-selecao",
-                        children=[
-                            html.Label("Mês em destaque", htmlFor="f-mes-destaque", className="rotulo-controle"),
-                            dcc.Dropdown(
-                                id="f-mes-destaque",
-                                options=opcoes_mes,
-                                placeholder="Nenhum",
-                                className="dropdown-mes",
-                            ),
-                            html.Div(
-                                id="chips-selecao",
-                                className="d-flex gap-2 align-items-center",
-                                role="status",
-                                **{"aria-live": "polite"},
-                            ),
-                            dbc.Button("Limpar seleção", id="limpar-selecao", color="link", size="sm"),
-                        ],
-                    ),
                     dbc.Tabs(
                         id="abas",
                         active_tab="visao-geral",
@@ -155,26 +135,122 @@ def _registrar_estado(app: Dash, contexto: AppContext) -> None:
             return no_update
         return dash_ctx.triggered_id["aba"]
 
+    ultimo = len(contexto.meses) - 1
+
     @app.callback(
         Output("store-filtros", "data"),
-        Input("f-periodo", "value"),
+        Input("f-periodo-ini", "value"),
+        Input("f-periodo-fim", "value"),
         Input("f-fluxo", "value"),
         Input("f-sitio", "value"),
         Input("f-internado", "value"),
     )
-    def filtros(periodo, fluxos, sitios, internado):
+    def filtros(ini, fim, fluxos, sitios, internado):
+        ini = 0 if ini is None else ini
+        fim = ultimo if fim is None else fim
+        periodo = sorted([ini, fim])
         return {"periodo": periodo, "fluxos": fluxos or [], "sitios": sitios or [], "internado": internado or ""}
 
     @app.callback(
-        Output("f-periodo", "value"),
+        Output("f-periodo-ini", "value"),
+        Output("f-periodo-fim", "value"),
         Output("f-fluxo", "value"),
         Output("f-sitio", "value"),
         Output("f-internado", "value"),
         Input("f-limpar", "n_clicks"),
+        Input({"type": "remover-filtro", "campo": ALL, "valor": ALL}, "n_clicks"),
+        State("store-filtros", "data"),
         prevent_initial_call=True,
     )
-    def limpar_filtros(_):
-        return [0, len(contexto.meses) - 1], [], [], ""
+    def limpar_ou_remover(_limpar, remocoes, estado):
+        disparos = dash_ctx.triggered_prop_ids
+        if "f-limpar.n_clicks" in disparos:
+            return 0, ultimo, [], [], ""
+        # Só vale o ✕ realmente clicado (botões recém-criados chegam com n_clicks = 0).
+        clicados = [t for t in dash_ctx.triggered if t["value"] and "remover-filtro" in t["prop_id"]]
+        if not clicados:
+            return (no_update,) * 5
+        gatilho = json.loads(clicados[0]["prop_id"].rsplit(".", 1)[0])
+        estado = estado or {}
+        campo, valor = gatilho["campo"], gatilho["valor"]
+        if campo == "periodo":
+            return 0, ultimo, no_update, no_update, no_update
+        if campo == "fluxo":
+            return no_update, no_update, [f for f in estado.get("fluxos", []) if f != valor], no_update, no_update
+        if campo == "sitio":
+            return no_update, no_update, no_update, [x for x in estado.get("sitios", []) if x != valor], no_update
+        return no_update, no_update, no_update, no_update, ""
+
+    @app.callback(
+        Output("f-fluxo-menu", "label"),
+        Output("f-sitio-menu", "label"),
+        Output("filtros-ativos", "children"),
+        Input("store-filtros", "data"),
+    )
+    def resumo_filtros(estado):
+        estado = estado or {}
+
+        def rotulo(nome, marcados):
+            texto = (
+                "Todos"
+                if not marcados
+                else ", ".join(marcados)
+                if len(marcados) <= 2
+                else f"{marcados[0]} e +{len(marcados) - 1}"
+            )
+            partes = [html.Span(f"{nome}: ", className="visually-hidden"), html.Span(texto, className="menu-texto")]
+            if marcados:
+                partes.append(html.Span(str(len(marcados)), className="contador"))
+            return partes
+
+        def tag(texto, campo, valor):
+            return html.Span(
+                [
+                    texto,
+                    html.Button(
+                        "✕",
+                        id={"type": "remover-filtro", "campo": campo, "valor": valor},
+                        type="button",
+                        className="tag-remover",
+                        n_clicks=0,
+                        **{"aria-label": f"Remover filtro {texto}"},
+                    ),
+                ],
+                className="tag-filtro",
+            )
+
+        tags = []
+        ini, fim = estado.get("periodo") or [0, ultimo]
+        if [ini, fim] != [0, ultimo]:
+            tags.append(
+                tag(f"Período: {rotulo_mes(contexto.meses[ini])}–{rotulo_mes(contexto.meses[fim])}", "periodo", "")
+            )
+        tags += [tag(f"Fluxo: {f}", "fluxo", f) for f in estado.get("fluxos", [])]
+        tags += [tag(f"Sítio: {x}", "sitio", x) for x in estado.get("sitios", [])]
+        if estado.get("internado"):
+            tags.append(tag(f"Atendimento: {estado['internado'].capitalize()}", "internado", ""))
+        if not tags:
+            tags = [html.Span("nenhum (todos os dados)", className="nota")]
+        return (
+            rotulo("Fluxo", estado.get("fluxos", [])),
+            rotulo("Sítio", estado.get("sitios", [])),
+            tags,
+        )
+
+    @app.callback(
+        Output("f-limpar", "style"),
+        Input("store-filtros", "data"),
+        Input("store-selecao", "data"),
+    )
+    def mostrar_limpar(estado, selecao):
+        estado = estado or {}
+        filtrado = (
+            (estado.get("periodo") or [0, ultimo]) != [0, ultimo]
+            or estado.get("fluxos")
+            or estado.get("sitios")
+            or estado.get("internado")
+        )
+        return {} if filtrado or selecao else {"display": "none"}
 
     @app.callback(
         Output("store-selecao", "data"),

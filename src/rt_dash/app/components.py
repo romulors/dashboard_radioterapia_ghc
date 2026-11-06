@@ -66,57 +66,82 @@ def cabecalho() -> html.Header:
     )
 
 
+def _rotulo_filtro(texto: str) -> html.Span:
+    return html.Span(texto, className="filtro-rotulo")
+
+
+def _menu_checklist(id_: str, nome: str, opcoes: list[str]) -> dbc.DropdownMenu:
+    """Menu suspenso com caixas de seleção (o rótulo do botão mostra o que está marcado)."""
+    return dbc.DropdownMenu(
+        id=f"{id_}-menu",
+        label=[html.Span(f"{nome}: ", className="visually-hidden"), "Todos"],
+        children=[
+            dbc.Checklist(
+                id=id_,
+                options=[{"label": o, "value": o} for o in opcoes],
+                value=[],
+                className="menu-checklist",
+                inputClassName="form-check-input",
+            )
+        ],
+        color="light",
+        className="menu-filtro",
+        toggleClassName="menu-filtro-botao",
+    )
+
+
 def barra_filtros(meses, sitios) -> html.Div:
+    """Barra compacta (alternativa A): uma linha de controles da mesma altura e, abaixo, a faixa com os filtros
+    ativos (cada um removível) e a seleção atual."""
     from rt_dash.viz.theme import rotulo_mes
 
-    marcas = {i: rotulo_mes(m) for i, m in enumerate(meses)}
-    return html.Div(
-        className="barra-filtros",
+    opcoes_mes = [{"label": rotulo_mes(m), "value": i} for i, m in enumerate(meses)]
+    opcoes_destaque = [{"label": rotulo_mes(m), "value": m.strftime("%Y-%m")} for m in meses]
+    separador = html.Span(className="filtro-sep", **{"aria-hidden": "true"})
+    barra = html.Div(
+        className="barra-filtros barra-compacta",
+        role="search",
+        **{"aria-label": "Filtros do painel"},
         children=[
             html.Div(
-                className="filtro filtro-periodo",
+                className="filtro-grupo",
                 children=[
-                    html.Label("Período"),
-                    dcc.RangeSlider(
-                        id="f-periodo",
-                        min=0,
-                        max=len(meses) - 1,
-                        step=1,
-                        value=[0, len(meses) - 1],
-                        marks=marcas,
-                        allowCross=False,
-                        pushable=0,
-                        **_SEM_CAIXA_NUMERICA,
+                    html.Label("Período", htmlFor="f-periodo-ini", className="filtro-rotulo"),
+                    dcc.Dropdown(
+                        id="f-periodo-ini",
+                        options=opcoes_mes,
+                        value=0,
+                        clearable=False,
+                        searchable=False,
+                        className="dd-filtro dd-mes",
+                    ),
+                    html.Label("até", htmlFor="f-periodo-fim", className="filtro-ate"),
+                    dcc.Dropdown(
+                        id="f-periodo-fim",
+                        options=opcoes_mes,
+                        value=len(meses) - 1,
+                        clearable=False,
+                        searchable=False,
+                        className="dd-filtro dd-mes",
                     ),
                 ],
             ),
+            separador,
             html.Div(
-                className="filtro",
-                children=[
-                    html.Label("Tipo de fluxo"),
-                    dbc.Checklist(
-                        id="f-fluxo",
-                        options=[{"label": f, "value": f} for f in TIPOS_FLUXO],
-                        value=[],
-                        inline=True,
-                        className="chips-fluxo",
-                        inputClassName="btn-check",
-                        labelClassName="chip",
-                        labelCheckedClassName="chip-ativo",
-                    ),
-                ],
+                className="filtro-grupo",
+                children=[_rotulo_filtro("Fluxo"), _menu_checklist("f-fluxo", "Fluxo", TIPOS_FLUXO)],
             ),
             html.Div(
-                className="filtro filtro-sitio",
-                children=[
-                    html.Label("Sítio"),
-                    dcc.Dropdown(id="f-sitio", options=sitios, multi=True, placeholder="Todos"),
-                ],
+                className="filtro-grupo",
+                children=[_rotulo_filtro("Sítio"), _menu_checklist("f-sitio", "Sítio", sitios)],
             ),
+            separador,
             html.Div(
-                className="filtro",
+                className="filtro-grupo",
+                role="radiogroup",
+                **{"aria-label": "Atendimento"},
                 children=[
-                    html.Label("Atendimento"),
+                    _rotulo_filtro("Atendimento"),
                     dbc.RadioItems(
                         id="f-internado",
                         options=[
@@ -126,15 +151,39 @@ def barra_filtros(meses, sitios) -> html.Div:
                         ],
                         value="",
                         inline=True,
+                        className="segmentado",
                         inputClassName="btn-check",
-                        labelClassName="chip",
-                        labelCheckedClassName="chip-ativo",
+                        labelClassName="segmento",
+                        labelCheckedClassName="segmento-ativo",
                     ),
                 ],
             ),
-            dbc.Button("Limpar", id="f-limpar", color="light", className="botao-limpar"),
+            html.Div(
+                className="filtro-grupo ms-auto",
+                children=[
+                    html.Label("Mês em destaque", htmlFor="f-mes-destaque", className="filtro-rotulo"),
+                    dcc.Dropdown(
+                        id="f-mes-destaque",
+                        options=opcoes_destaque,
+                        placeholder="Nenhum",
+                        searchable=False,
+                        className="dd-filtro dd-mes",
+                    ),
+                ],
+            ),
         ],
     )
+    faixa = html.Div(
+        className="faixa-ativos",
+        children=[
+            html.Span("Filtros ativos:", className="faixa-rotulo"),
+            html.Div(id="filtros-ativos", className="faixa-tags", role="status", **{"aria-live": "polite"}),
+            html.Div(id="chips-selecao", className="faixa-tags", role="status", **{"aria-live": "polite"}),
+            html.Button("Limpar seleção", id="limpar-selecao", type="button", className="link-limpar"),
+            html.Button("Limpar tudo", id="f-limpar", type="button", className="link-limpar ms-auto"),
+        ],
+    )
+    return html.Div([barra, faixa], className="filtros-fixos")
 
 
 def _controles_do_grafico(conteudo) -> tuple[html.Div | None, html.Div | None]:

@@ -22,14 +22,50 @@ body { background: var(--fundo); color: var(--texto); font-family: Inter, "Segoe
 .ghc-titulo h1 { color: #fff; font-size: 22px; font-weight: 700; margin: 0; }
 .ghc-sub { color: var(--ghc-verde); font-size: 13px; }
 
-/* Barra de filtros */
-.barra-filtros { display: flex; flex-wrap: wrap; gap: 16px 24px; align-items: flex-end; background: var(--cartao);
-  border-bottom: 3px solid var(--ghc-agua); padding: 12px 16px; margin: 0 -16px 8px; position: sticky; top: 0; z-index: 20; }
-.filtro label, .rotulo-controle { display: block; font-size: 12px; font-weight: 600; color: var(--texto-2); text-transform: uppercase; letter-spacing: .03em; margin-bottom: 4px; }
-.rotulo-controle { display: inline-block; margin: 0 8px 0 0; }
-.filtro-periodo { flex: 1 1 420px; min-width: 300px; }
-.filtro-sitio { flex: 0 1 260px; min-width: 200px; }
-.botao-limpar { border: 1px solid var(--grade); }
+/* Barra de filtros compacta (alternativa A): uma linha de controles de 36 px + faixa de filtros ativos */
+.filtros-fixos { position: sticky; top: 0; z-index: 20; margin: 0 -16px 8px; background: var(--cartao);
+  border-bottom: 3px solid var(--ghc-agua); box-shadow: 0 2px 4px rgba(0,0,0,.04); }
+.barra-filtros { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding: 10px 16px;
+  border-bottom: 1px solid var(--grade); }
+.filtro-grupo { display: flex; align-items: center; gap: 8px; }
+.filtro-rotulo { font-size: 11px; font-weight: 700; color: var(--texto-2); text-transform: uppercase;
+  letter-spacing: .05em; margin: 0; white-space: nowrap; }
+.filtro-ate { font-size: 13px; color: var(--texto-2); margin: 0; }
+.filtro-sep { width: 1px; height: 28px; background: var(--grade); }
+.dd-filtro { min-width: 104px; font-size: 14px; }
+.dd-filtro .Select-control, .dd-filtro .Select__control, .dd-filtro .dash-dropdown { min-height: 36px; height: 36px; }
+.menu-filtro .menu-filtro-botao { height: 36px; min-width: 150px; max-width: 220px; display: inline-flex; align-items: center;
+  justify-content: space-between; gap: 8px; background: #fff; border: 1px solid #B8C4C4; color: var(--texto);
+  font-size: 14px; padding: 0 12px; border-radius: 6px; }
+.menu-filtro .menu-filtro-botao:hover, .menu-filtro .menu-filtro-botao:focus-visible { border-color: var(--ghc-petroleo); }
+.menu-texto { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.contador { background: var(--ghc-petroleo); color: #fff; border-radius: 999px; font-size: 11px; font-weight: 700;
+  padding: 1px 7px; margin-left: auto; }
+.menu-filtro .dropdown-menu { padding: 8px 12px; max-height: 340px; overflow-y: auto; min-width: 240px; }
+.menu-checklist .form-check { padding: 4px 0 4px 26px; margin: 0; }
+.menu-checklist .form-check-input:checked { background-color: var(--ghc-petroleo); border-color: var(--ghc-petroleo); }
+.segmentado { display: inline-flex; border: 1px solid var(--ghc-petroleo); border-radius: 6px; overflow: hidden; height: 36px; }
+.segmentado .form-check { margin: 0; padding: 0; display: flex; }
+.segmento { display: flex; align-items: center; padding: 0 11px; font-size: 13px; color: var(--ghc-verde); cursor: pointer;
+  border-right: 1px solid var(--ghc-petroleo); margin: 0; user-select: none; }
+.segmentado .form-check:last-child .segmento { border-right: 0; }
+.segmento-ativo, .btn-check:checked + .segmento { background: var(--ghc-petroleo); color: #fff; font-weight: 600; }
+.btn-check:focus-visible + .segmento { outline: 3px solid #1F4E99; outline-offset: -3px; }
+.faixa-ativos { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding: 6px 16px; font-size: 13px;
+  min-height: 38px; }
+.faixa-rotulo { color: var(--texto-2); font-weight: 600; }
+.faixa-tags { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.faixa-tags:empty { display: none; }
+.tag-filtro { display: inline-flex; align-items: center; gap: 4px; background: #E3F1F1; border: 1px solid #9CCFCF;
+  color: var(--ghc-verde); border-radius: 999px; padding: 1px 4px 1px 10px; }
+.tag-remover { border: 0; background: transparent; color: var(--ghc-verde); width: 22px; height: 22px; border-radius: 50%;
+  line-height: 1; padding: 0; font-size: 12px; }
+.tag-remover:hover, .tag-remover:focus-visible { background: #C6E2E2; }
+.link-limpar { border: 0; background: transparent; color: var(--ghc-petroleo); font-weight: 600; text-decoration: underline;
+  padding: 2px 4px; font-size: 13px; }
+body.alto-contraste .tag-filtro { background: #fff; border-color: #000; color: #000; }
+body.alto-contraste .menu-filtro .menu-filtro-botao, body.alto-contraste .segmentado { border-color: #000; }
+@media (max-width: 900px) { .filtro-sep { display: none; } .filtro-grupo.ms-auto { margin-left: 0 !important; } }
 
 /* Chips (checklists e radios com aparência de botão) */
 .chip { display: inline-block; border: 1px solid var(--grade); border-radius: 999px; padding: 3px 12px; margin: 0 6px 6px 0;
@@ -37,7 +73,6 @@ body { background: var(--fundo); color: var(--texto); font-family: Inter, "Segoe
 .chip:hover { border-color: var(--ghc-petroleo); }
 .chip-ativo, .btn-check:checked + .chip { background: var(--ghc-petroleo); border-color: var(--ghc-petroleo); color: #fff; }
 .form-check-inline { margin-right: 0; padding-left: 0; }
-.chips-selecao { display: flex; align-items: center; gap: 8px; min-height: 32px; margin: 4px 0; }
 
 /* Abas */
 .abas { border-bottom: 2px solid var(--grade); margin-bottom: 12px; }
