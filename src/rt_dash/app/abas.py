@@ -497,158 +497,203 @@ REFERENCIAS = [
 ]
 
 
+ACESSIBILIDADE = [
+    ("⌨", "Teclado", "Tab e Shift+Tab percorrem os controles; nas abas, use as setas."),
+    ("↷", "Pular para o conteúdo", "É o primeiro item ao pressionar Tab."),
+    (
+        "◐",
+        "Alto contraste",
+        "O interruptor no cabeçalho troca o gradiente por cores sólidas, hachuras, traços e "
+        "símbolos. A escolha fica salva neste navegador.",
+    ),
+    (
+        "▤",
+        "Texto e tabela",
+        "Cada gráfico tem um resumo em texto e o botão “Ver dados em tabela” com os mesmos valores.",
+    ),
+    ("✓", "Não só cor", "Situações frente à meta usam ícone e palavra (✓ ! ✕)."),
+    (
+        "i",
+        "Ícone de informação",
+        "O ⓘ de cada gráfico explica o cálculo, a meta e a tolerância; abre com o mouse "
+        "ou o foco do teclado, e Esc fecha.",
+    ),
+    (
+        "⇄",
+        "Outras visualizações",
+        "O ⇄ mostra os mesmos dados em outro tipo de gráfico; o índice (ex.: 2/4) diz qual está na tela.",
+    ),
+]
+
+
+def _fato(rotulo: str, valor) -> html.Div:
+    return html.Div(
+        [html.Span(rotulo, className="fato-rotulo"), html.Span(valor, className="fato-valor")], className="fato"
+    )
+
+
+def _cartao_sobre(titulo: str, nota: str, *filhos, classe: str = "") -> html.Section:
+    return html.Section(
+        [html.H2(titulo, className="secao-titulo"), html.P(nota, className="secao-nota"), *filhos],
+        className=f"cartao-sobre {classe}".strip(),
+    )
+
+
+def _situacao(codigo: str, texto: str) -> html.Span:
+    icone = {"ok": "✓", "aviso": "!", "falta": "✕", "sem": "–"}[codigo]
+    return html.Span(
+        [html.Span(icone, className="situacao-icone", **{"aria-hidden": "true"}), " ", texto],
+        className=f"situacao situacao-{codigo}",
+    )
+
+
 def sobre_aba(ctx: AppContext) -> html.Div:
     st = ctx.settings
     ini, fim = rotulo_mes(ctx.meses[0]), rotulo_mes(ctx.meses[-1])
+    n = lambda v: f"{v:,}".replace(",", ".")  # noqa: E731
+
+    def pct(v):
+        return f"{v * 100:.0f}%"
+
+    prazos = " · ".join(
+        f"{k} {v} dia{'s' if v > 1 else ''} út{'eis' if v > 1 else 'il'}"
+        for k, v in st.prazo_planejamento_dias_uteis.items()
+    )
+    definicoes = [
+        ("Ciclo de planejamento", "Da importação da TC até a última atividade antes do próximo ciclo."),
+        (
+            "Tipo de fluxo",
+            "Eletivo, Prioridade, Urgência, Braquiterapia e Retomografado (pelo nome da tarefa no Aria).",
+        ),
+        ("Prazo do planejamento", prazos + "."),
+        ("Turno", "Dia: atendimentos agendados até 18h45. Noite: a partir das 19h."),
+        (
+            "Capacidade do acelerador",
+            f"{st.acelerador.vagas_por_dia} vagas por dia, das {st.acelerador.abertura:%H:%M} às "
+            f"{st.acelerador.fechamento:%H:%M}.",
+        ),
+    ]
+    lo, hi = st.meta_ocupacao_acelerador
+    metas = [
+        ("Ocupação do acelerador", ("ok", f"{pct(lo)} a {pct(hi)}")),
+        (
+            "Tarefas no prazo",
+            ("ok", f"{pct(st.meta_pct_no_prazo[0])} ou mais") if st.meta_pct_no_prazo else ("sem", "sem meta definida"),
+        ),
+        (
+            "Duração do ciclo (mediana)",
+            ("ok", f"até {st.meta_lead_time_dias:g} dias") if st.meta_lead_time_dias else ("sem", "sem meta definida"),
+        ),
+    ]
+    qualidade = [
+        ("ok", f"Período coberto: {ini} a {fim}. Dados anonimizados do Sistema Aria."),
+        (
+            "ok",
+            f"{n(len(ctx.ds.ciclos))} ciclos de planejamento, {n(len(ctx.ds.jornada))} atividades e "
+            f"{n(len(ctx.ds.sessoes))} agendamentos no acelerador.",
+        ),
+        ("falta", "Faltas no acelerador e CID por paciente: sem fonte de dados até agora."),
+        ("aviso", "Tomografia sem agenda própria: a ocupação é estimada por “Importar TC e Fusao”."),
+        ("aviso", "Sessões acima de 60 min são tratadas como erro de registro."),
+    ]
+    icone_q = {"ok": ("✓", "dado completo"), "aviso": ("!", "estimativa"), "falta": ("✕", "sem fonte")}
     return html.Div(
-        className="visao-geral sobre",
+        className="sobre",
         children=[
             _pergunta("sobre"),
-            dbc.Row(
-                [
-                    dbc.Col(
-                        _secao(
-                            "Sobre o painel",
-                            "Como e por que este dashboard foi criado.",
-                            html.Dl(
-                                [
-                                    html.Dt("Objetivo"),
-                                    html.Dd(
-                                        "Acompanhar o fluxo de planejamento e tratamento do Serviço de Radioterapia "
-                                        "do Grupo Hospitalar Conceição (100% SUS), paciente a paciente e ciclo a "
-                                        "ciclo, com o tempo entre as atividades como informação central."
-                                    ),
-                                    html.Dt("Autoria"),
-                                    html.Dd("Romulo Rocha Santos, trabalho da disciplina de Visualização de Dados."),
-                                    html.Dt("Fonte dos dados"),
-                                    html.Dd(
-                                        f"Exportações anonimizadas do Sistema Aria: tarefas de planejamento e "
-                                        f"agendamentos do acelerador linear, de {ini} a {fim}."
-                                    ),
-                                    html.Dt("Tecnologia"),
-                                    html.Dd(
-                                        "Python, com Plotly Dash, Dash Bootstrap Components, Dash AG Grid e pandas."
-                                    ),
-                                    html.Dt("Código-fonte"),
-                                    html.Dd(
-                                        html.A(
-                                            "github.com/romulors/dashboard_radioterapia_ghc",
-                                            href="https://github.com/romulors/dashboard_radioterapia_ghc",
-                                            target="_blank",
-                                            rel="noopener",
-                                        )
-                                    ),
-                                ],
-                                className="lista-definicoes",
-                            ),
-                        ),
-                        lg=6,
+            html.Section(
+                className="sobre-hero",
+                children=[
+                    html.H2("Sobre o painel", className="secao-titulo"),
+                    html.P(
+                        "Acompanhar o fluxo de planejamento e tratamento do Serviço de Radioterapia do Grupo "
+                        "Hospitalar Conceição (100% SUS), paciente a paciente e ciclo a ciclo, com o tempo entre as "
+                        "atividades como informação central.",
+                        className="sobre-objetivo",
                     ),
-                    dbc.Col(
-                        _secao(
-                            "Referências",
-                            "Base metodológica para os indicadores, os gráficos e a acessibilidade.",
-                            html.Ul([html.Li(r) for r in REFERENCIAS]),
-                        ),
-                        lg=6,
+                    html.Div(
+                        [
+                            _fato("Autoria", "Romulo Rocha Santos · disciplina de Visualização de Dados"),
+                            _fato("Fonte", "Sistema Aria · exportações anonimizadas"),
+                            _fato("Período", f"{ini} a {fim}"),
+                            _fato("Tecnologia", "Python · Plotly Dash · Bootstrap · AG Grid · pandas"),
+                            _fato(
+                                "Código-fonte",
+                                html.A(
+                                    "github.com/romulors/dashboard_radioterapia_ghc",
+                                    href="https://github.com/romulors/dashboard_radioterapia_ghc",
+                                    target="_blank",
+                                    rel="noopener",
+                                ),
+                            ),
+                        ],
+                        className="sobre-fatos",
                     ),
                 ],
-                className="g-3",
             ),
-            dbc.Row(
-                [
-                    dbc.Col(
-                        _secao(
-                            "Definições e metas",
-                            "Regras de negócio usadas nos cálculos (config/settings.yaml).",
-                            html.Dl(
-                                [
-                                    html.Dt("Ciclo de planejamento"),
-                                    html.Dd("Da importação da TC até a última atividade antes do próximo ciclo."),
-                                    html.Dt("Tipo de fluxo"),
-                                    html.Dd(
-                                        "Eletivo, Prioridade, Urgência, Braquiterapia e Retomografado (pelo nome da "
-                                        "tarefa no Aria). Prazo do planejamento: "
-                                        + ", ".join(
-                                            f"{k} {v} dia(s) útil(eis)"
-                                            for k, v in st.prazo_planejamento_dias_uteis.items()
-                                        )
-                                        + "."
-                                    ),
-                                    html.Dt("Turno"),
-                                    html.Dd("Dia: atendimentos agendados até 18h45. Noite: a partir das 19h."),
-                                    html.Dt("Capacidade do acelerador"),
-                                    html.Dd(
-                                        f"{st.acelerador.vagas_por_dia} vagas por dia, das "
-                                        f"{st.acelerador.abertura:%H:%M} às {st.acelerador.fechamento:%H:%M}."
-                                    ),
-                                    html.Dt("Metas"),
-                                    html.Dd(
-                                        f"Ocupação do acelerador {st.meta_ocupacao_acelerador[0]:.0%} a "
-                                        f"{st.meta_ocupacao_acelerador[1]:.0%}. Tarefas no prazo e duração do ciclo: "
-                                        + (
-                                            "definidas em config/settings.yaml."
-                                            if st.meta_pct_no_prazo or st.meta_lead_time_dias
-                                            else "ainda sem meta definida pela gestão."
-                                        )
-                                    ),
-                                ],
-                                className="lista-definicoes",
-                            ),
+            html.Div(
+                className="sobre-grade",
+                children=[
+                    _cartao_sobre(
+                        "Definições",
+                        "Regras de negócio usadas nos cálculos (config/settings.yaml).",
+                        html.Dl(
+                            [x for d, t in definicoes for x in (html.Dt(d), html.Dd(t))],
+                            className="sobre-pares",
                         ),
-                        lg=6,
                     ),
-                    dbc.Col(
-                        _secao(
-                            "Qualidade e limites dos dados",
-                            "O que o painel cobre e o que ainda falta.",
-                            html.Ul(
-                                [
-                                    html.Li(f"Período coberto: {ini} a {fim}. Dados anonimizados do Sistema Aria."),
-                                    html.Li(
-                                        f"{len(ctx.ds.ciclos):,} ciclos de planejamento, {len(ctx.ds.jornada):,} "
-                                        f"atividades e {len(ctx.ds.sessoes):,} agendamentos no acelerador.".replace(
-                                            ",", "."
-                                        )
-                                    ),
-                                    html.Li("Faltas no acelerador e CID por paciente: sem fonte de dados até agora."),
-                                    html.Li(
-                                        "Tomografia: sem agenda própria; a ocupação é estimada por “Importar TC e "
-                                        "Fusao”."
-                                    ),
-                                    html.Li("Sessões acima de 60 min são tratadas como erro de registro."),
-                                ]
-                            ),
+                    _cartao_sobre(
+                        "Metas",
+                        "Valores que o serviço quer atingir.",
+                        html.Ul(
+                            [html.Li([html.Span(m), _situacao(*sit)], className="sobre-meta") for m, sit in metas],
+                            className="sobre-lista",
                         ),
-                        lg=6,
+                        html.H2("Qualidade e limites dos dados", className="secao-titulo mt-3"),
+                        html.P("O que o painel cobre e o que ainda falta.", className="secao-nota"),
+                        html.Ul(
+                            [
+                                html.Li(
+                                    [
+                                        html.Span(
+                                            icone_q[c][0],
+                                            className=f"q-icone q-{c}",
+                                            title=icone_q[c][1],
+                                            **{"aria-label": icone_q[c][1]},
+                                        ),
+                                        html.Span(t),
+                                    ],
+                                    className="sobre-qualidade",
+                                )
+                                for c, t in qualidade
+                            ],
+                            className="sobre-lista",
+                        ),
+                    ),
+                    _cartao_sobre(
+                        "Acessibilidade",
+                        "Segue a WCAG 2.2 nível AA (base da EN 301 549).",
+                        html.Ul(
+                            [
+                                html.Li(
+                                    [
+                                        html.Span(i, className="a11y-icone", **{"aria-hidden": "true"}),
+                                        html.Div([html.Strong(t), html.Span(d)]),
+                                    ],
+                                    className="sobre-a11y",
+                                )
+                                for i, t, d in ACESSIBILIDADE
+                            ],
+                            className="sobre-lista",
+                        ),
                     ),
                 ],
-                className="g-3",
             ),
-            _secao(
-                "Acessibilidade",
-                "Segue a WCAG 2.2 nível AA (base da EN 301 549).",
-                html.Ul(
-                    [
-                        html.Li(
-                            "Navegação por teclado: Tab e Shift+Tab percorrem os controles; nas abas, use as setas."
-                        ),
-                        html.Li("“Pular para o conteúdo” é o primeiro item ao pressionar Tab."),
-                        html.Li(
-                            "O interruptor “Alto contraste”, no cabeçalho, troca o gradiente por cores sólidas e "
-                            "acrescenta hachuras, traços e símbolos às séries. A escolha fica salva neste navegador."
-                        ),
-                        html.Li(
-                            "Cada gráfico tem um resumo em texto logo abaixo e o botão “Ver dados em tabela” com os "
-                            "mesmos valores."
-                        ),
-                        html.Li("Situações frente à meta usam ícone e palavra (✓ ! ✕), não só cor."),
-                        html.Li(
-                            "O ícone “?” no canto de cada gráfico explica como o indicador é calculado; ele abre com "
-                            "o mouse ou com o foco do teclado, e Esc fecha."
-                        ),
-                    ]
-                ),
+            _cartao_sobre(
+                "Referências",
+                "Base metodológica para os indicadores, os gráficos e a acessibilidade.",
+                html.Ol([html.Li(r) for r in REFERENCIAS], className="sobre-refs"),
+                classe="mt-3",
             ),
         ],
     )

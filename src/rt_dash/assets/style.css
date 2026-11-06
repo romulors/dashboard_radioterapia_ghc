@@ -294,3 +294,42 @@ body.grafico-em-foco .tooltip { z-index: 1070; }
 .pergunta-seta { margin-left: auto; color: var(--ghc-petroleo); font-weight: 700; font-size: 18px; line-height: 1; padding-left: 8px; }
 body.alto-contraste .pergunta-num { background: #fff; border: 1.5px solid #000; color: #000; }
 body.alto-contraste .pergunta-linha:hover { background: #fff; text-decoration: underline; }
+
+/* Aba Sobre (opção A): apresentação com a ficha do projeto + cartões com a borda do Mapa das abas */
+.sobre-hero { background: var(--cartao); border-radius: 10px; border-left: 6px solid var(--ghc-petroleo);
+  padding: 16px 22px; margin-bottom: 14px; box-shadow: 0 1px 2px rgba(0,0,0,.06); }
+.sobre-objetivo { font-size: 16px; line-height: 1.5; margin: 6px 0 0; }
+.sobre-fatos { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-top: 14px; }
+.fato { background: #F4F8F8; border-radius: 8px; padding: 8px 10px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.fato-rotulo { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--texto-2); }
+.fato-valor { font-size: 14px; overflow-wrap: anywhere; }
+.sobre-grade { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 14px; align-items: start; }
+.cartao-sobre { background: var(--cartao); border-radius: 10px; border-top: 4px solid var(--ghc-petroleo); padding: 12px 18px 14px;
+  box-shadow: 0 1px 2px rgba(0,0,0,.06); }
+.sobre-pares { display: grid; grid-template-columns: minmax(130px, 40%) 1fr; margin: 0; font-size: 14px; }
+.sobre-pares dt, .sobre-pares dd { padding: 7px 0; border-top: 1px solid var(--grade); margin: 0; }
+.sobre-pares dt { font-weight: 700; padding-right: 12px; }
+.sobre-pares dt:first-of-type, .sobre-pares dd:first-of-type { border-top: 0; }
+.sobre-lista { list-style: none; margin: 0; padding: 0; font-size: 14px; }
+.sobre-meta { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 7px 0; border-top: 1px solid var(--grade); }
+.sobre-meta:first-child { border-top: 0; }
+.situacao { font-size: 12px; font-weight: 700; border-radius: 999px; padding: 2px 9px; white-space: nowrap; }
+.situacao-ok { background: #E3F1F1; color: var(--ghc-verde); }
+.situacao-sem { background: #F1F2F4; color: #4B5563; }
+.sobre-qualidade { display: flex; gap: 10px; align-items: flex-start; padding: 6px 0; }
+.q-icone { flex: 0 0 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700; }
+.q-ok { background: #E3F1F1; color: var(--ghc-verde); }
+.q-aviso { background: #F3EEDD; color: #6B5310; }
+.q-falta { background: #F6E3E3; color: #8C1D1D; }
+.sobre-a11y { display: flex; gap: 12px; padding: 8px 0; border-top: 1px solid var(--grade); }
+.sobre-a11y:first-child { border-top: 0; }
+.sobre-a11y strong { display: block; }
+.sobre-a11y span:not(.a11y-icone) { color: #4B5563; }
+.a11y-icone { flex: 0 0 34px; height: 34px; border-radius: 8px; background: #EEF2F2; color: var(--ghc-petroleo);
+  display: inline-flex; align-items: center; justify-content: center; font-size: 17px; font-weight: 700; }
+.sobre-refs { margin: 0; padding-left: 20px; font-size: 14px; }
+.sobre-refs li { padding: 3px 0; }
+body.alto-contraste .sobre-hero, body.alto-contraste .cartao-sobre { border: 2px solid #000; box-shadow: none; }
+body.alto-contraste .situacao, body.alto-contraste .q-icone, body.alto-contraste .a11y-icone, body.alto-contraste .fato {
+  background: #fff; color: #000; border: 1.5px solid #000; }
